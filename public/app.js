@@ -33,7 +33,24 @@
   // Keyed by "YYYY-MM-DD" → array of { title, color, time }
   let eventsMap = {};
 
+  // Unit settings (fetched from API)
+  let tempSymbol = '°';
+  let windLabel  = 'km/h';
+
   // ───────── Fetch helpers ─────────
+
+  async function fetchWeatherSettings() {
+    try {
+      const res = await fetch('/api/settings/weather');
+      const s   = await res.json();
+      tempSymbol = s.temp_unit === 'fahrenheit' ? '°F' : '°C';
+      const windMap = { ms: 'm/s', kmh: 'km/h', mph: 'mph' };
+      windLabel = windMap[s.wind_unit] || 'km/h';
+    } catch (e) {
+      console.warn('Failed to fetch weather settings:', e);
+    }
+  }
+
   async function fetchEvents() {
     const now   = new Date();
     const year  = now.getFullYear();
@@ -63,9 +80,9 @@
 
       // Current weather
       if (current && current.temp != null) {
-        document.getElementById('current-temp').textContent = `${Math.round(current.temp)}°`;
+        document.getElementById('current-temp').textContent = `${Math.round(current.temp)}${tempSymbol}`;
         document.getElementById('current-icon').textContent = current.icon || '⛅';
-        document.getElementById('wind-speed').textContent   = `${current.wind_speed} m/s ${current.wind_dir || ''}`.trim();
+        document.getElementById('wind-speed').textContent   = `${current.wind_speed} ${windLabel} ${current.wind_dir || ''}`.trim();
         document.getElementById('humidity').textContent      = `${current.humidity}%`;
         document.getElementById('sunrise').textContent       = current.sunrise || '';
         document.getElementById('sunset').textContent        = current.sunset || '';
@@ -78,8 +95,8 @@
           if (!el) return;
           el.querySelector('.forecast-label').textContent = f.day_label || '';
           el.querySelector('.forecast-icon').textContent  = f.icon || '';
-          el.querySelector('.hi').textContent             = Math.round(f.hi);
-          el.querySelector('.lo').textContent             = Math.round(f.lo);
+          el.querySelector('.hi').textContent             = `${Math.round(f.hi)}°`;
+          el.querySelector('.lo').textContent             = `${Math.round(f.lo)}°`;
         });
       }
     } catch (e) {
@@ -267,6 +284,7 @@
 
   // ───────── Refresh cycle ─────────
   async function refreshAll() {
+    await fetchWeatherSettings();
     await Promise.all([fetchEvents(), fetchWeather()]);
     buildCalendar();
     await fetchTodayTomorrow();

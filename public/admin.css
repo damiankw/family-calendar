@@ -740,6 +740,21 @@ html, body {
   margin-top: 8px;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.save-status {
+  font-size: 13px;
+  color: #8b8b8b;
+}
+
+.search-no-results {
+  cursor: default;
+  opacity: 0.45;
+}
+.search-no-results:hover {
+  background: transparent !important;
 }
 
 /* ===== Coming soon cards ===== */

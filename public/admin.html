@@ -279,15 +279,7 @@
             <div class="search-input-wrap">
               <input type="text" class="form-input" id="weather-search" placeholder="Start typing a city name…" autocomplete="off">
               <div class="search-results" id="weather-search-results">
-                <!-- Populated dynamically -->
-                <div class="search-result-item" data-lat="-37.8136" data-lon="144.9631" data-tz="Australia/Melbourne">
-                  <span class="search-result-name">Melbourne</span>
-                  <span class="search-result-region">Victoria, Australia</span>
-                </div>
-                <div class="search-result-item" data-lat="-37.5622" data-lon="143.8503" data-tz="Australia/Melbourne">
-                  <span class="search-result-name">Ballarat</span>
-                  <span class="search-result-region">Victoria, Australia</span>
-                </div>
+                <!-- Populated dynamically from geocoding API -->
               </div>
             </div>
           </div>
@@ -305,23 +297,8 @@
             </div>
             <div class="form-group">
               <label class="form-label" for="weather-tz">Timezone</label>
-              <select class="form-select" id="weather-tz">
-                <option value="Australia/Melbourne" selected>Australia/Melbourne</option>
-                <option value="Australia/Sydney">Australia/Sydney</option>
-                <option value="Australia/Brisbane">Australia/Brisbane</option>
-                <option value="Australia/Adelaide">Australia/Adelaide</option>
-                <option value="Australia/Perth">Australia/Perth</option>
-                <option value="Australia/Darwin">Australia/Darwin</option>
-                <option value="Australia/Hobart">Australia/Hobart</option>
-                <option value="Pacific/Auckland">Pacific/Auckland</option>
-                <option value="America/New_York">America/New_York</option>
-                <option value="America/Chicago">America/Chicago</option>
-                <option value="America/Los_Angeles">America/Los_Angeles</option>
-                <option value="Europe/London">Europe/London</option>
-                <option value="Europe/Paris">Europe/Paris</option>
-                <option value="Asia/Tokyo">Asia/Tokyo</option>
-                <option value="Asia/Singapore">Asia/Singapore</option>
-              </select>
+              <input type="text" class="form-input" id="weather-tz" placeholder="Australia/Melbourne">
+              <span class="form-hint">Auto-filled when selecting a city, or enter an IANA timezone.</span>
             </div>
           </div>
 
@@ -329,8 +306,8 @@
             <label class="form-label">Current Location</label>
             <div class="current-value-display" id="weather-current-location">
               <span class="current-label">📍</span>
-              <span>Melbourne, Australia</span>
-              <span class="current-coords">-37.8136, 144.9631</span>
+              <span id="weather-display-name">—</span>
+              <span class="current-coords" id="weather-display-coords">—</span>
             </div>
           </div>
 
@@ -354,14 +331,14 @@
             <label class="form-label">Wind Speed Unit</label>
             <div class="radio-group">
               <label class="radio-label">
-                <input type="radio" name="wind-unit" value="ms" checked>
-                <span class="radio-custom"></span>
-                m/s
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="wind-unit" value="kmh">
+                <input type="radio" name="wind-unit" value="kmh" checked>
                 <span class="radio-custom"></span>
                 km/h
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="wind-unit" value="ms">
+                <span class="radio-custom"></span>
+                m/s
               </label>
               <label class="radio-label">
                 <input type="radio" name="wind-unit" value="mph">
@@ -373,6 +350,7 @@
 
           <div class="form-actions">
             <button class="btn btn-primary" id="btn-weather-save">Save Weather Settings</button>
+            <span class="save-status" id="weather-save-status"></span>
           </div>
         </div>
       </section>

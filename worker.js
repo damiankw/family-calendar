@@ -108,10 +108,17 @@ function formatTime(isoString) {
 async function fetchWeather() {
   console.log('[worker] Fetching weather …');
 
-  // Read location from settings (default: Melbourne, Australia)
-  const lat = db.getSetting('weather_lat') || '-37.8136';
-  const lon = db.getSetting('weather_lon') || '144.9631';
-  const tz  = db.getSetting('weather_tz')  || 'Australia/Melbourne';
+  // Read location + unit preferences from settings
+  const lat      = db.getSetting('weather_lat')       || '-37.8136';
+  const lon      = db.getSetting('weather_lon')       || '144.9631';
+  const tz       = db.getSetting('weather_tz')        || 'Australia/Melbourne';
+  const tempUnit = db.getSetting('weather_temp_unit')  || 'celsius';
+  const windUnit = db.getSetting('weather_wind_unit')  || 'kmh';
+
+  // Map our setting keys to Open-Meteo query params
+  const omTempUnit = tempUnit === 'fahrenheit' ? 'fahrenheit' : 'celsius';
+  const omWindMap  = { ms: 'ms', kmh: 'kmh', mph: 'mph' };
+  const omWindUnit = omWindMap[windUnit] || 'kmh';
 
   // ── Current weather + daily forecast in one call ──
   const url = `https://api.open-meteo.com/v1/forecast`
@@ -119,6 +126,8 @@ async function fetchWeather() {
     + `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m`
     + `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset`
     + `&timezone=${encodeURIComponent(tz)}`
+    + `&temperature_unit=${omTempUnit}`
+    + `&wind_speed_unit=${omWindUnit}`
     + `&forecast_days=5`;
 
   const res = await fetch(url);

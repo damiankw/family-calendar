@@ -193,24 +193,69 @@
   });
 
   // ═══════════════════════════════════════
-  //  WEATHER — city search (UI only)
+  //  WEATHER — fully wired to backend
   // ═══════════════════════════════════════
 
   const weatherSearch  = document.getElementById('weather-search');
   const searchResults  = document.getElementById('weather-search-results');
+  const weatherLat     = document.getElementById('weather-lat');
+  const weatherLon     = document.getElementById('weather-lon');
+  const weatherTz      = document.getElementById('weather-tz');
+  const displayName    = document.getElementById('weather-display-name');
+  const displayCoords  = document.getElementById('weather-display-coords');
 
-  weatherSearch.addEventListener('focus', () => {
-    if (weatherSearch.value.length > 0) searchResults.classList.add('open');
-  });
+  // ── Load saved settings on page load ──
+  async function loadWeatherSettings() {
+    try {
+      const res = await fetch('/api/settings/weather');
+      const s   = await res.json();
+
+      weatherLat.value = s.lat  || '';
+      weatherLon.value = s.lon  || '';
+      weatherTz.value  = s.tz   || '';
+
+      displayName.textContent   = s.location_name || '—';
+      displayCoords.textContent = (s.lat && s.lon) ? `${s.lat}, ${s.lon}` : '—';
+
+      // Set radio buttons
+      const tempInput = document.querySelector(`input[name="temp-unit"][value="${s.temp_unit || 'celsius'}"]`);
+      if (tempInput) tempInput.checked = true;
+
+      const windInput = document.querySelector(`input[name="wind-unit"][value="${s.wind_unit || 'kmh'}"]`);
+      if (windInput) windInput.checked = true;
+    } catch (e) {
+      console.warn('Failed to load weather settings:', e);
+    }
+  }
+
+  loadWeatherSettings();
+
+  // ── City search — debounced geocoding via server proxy ──
+  let searchTimer = null;
 
   weatherSearch.addEventListener('input', () => {
-    // TODO: call Open-Meteo geocoding API
-    // For now, show the static results if there's input
-    if (weatherSearch.value.length > 0) {
-      searchResults.classList.add('open');
-    } else {
+    const q = weatherSearch.value.trim();
+    clearTimeout(searchTimer);
+
+    if (q.length < 2) {
       searchResults.classList.remove('open');
+      searchResults.innerHTML = '';
+      return;
     }
+
+    searchTimer = setTimeout(async () => {
+      try {
+        const res  = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        renderSearchResults(data.results || []);
+      } catch (e) {
+        console.warn('Geocode search failed:', e);
+      }
+    }, 300);
+  });
+
+  weatherSearch.addEventListener('focus', () => {
+    if (searchResults.children.length > 0) searchResults.classList.add('open');
   });
 
   document.addEventListener('click', (e) => {
@@ -219,42 +264,109 @@
     }
   });
 
-  // Clicking a search result
-  searchResults.querySelectorAll('.search-result-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const name   = item.querySelector('.search-result-name').textContent;
-      const region = item.querySelector('.search-result-region').textContent;
-      const lat    = item.dataset.lat;
-      const lon    = item.dataset.lon;
-      const tz     = item.dataset.tz;
+  function renderSearchResults(results) {
+    searchResults.innerHTML = '';
+    if (!results.length) {
+      const none = document.createElement('div');
+      none.className = 'search-result-item search-no-results';
+      none.innerHTML = '<span class="search-result-name">No cities found</span>';
+      searchResults.appendChild(none);
+      searchResults.classList.add('open');
+      return;
+    }
 
-      weatherSearch.value = `${name}, ${region}`;
-      document.getElementById('weather-lat').value = lat;
-      document.getElementById('weather-lon').value = lon;
-      document.getElementById('weather-tz').value  = tz;
+    for (const r of results) {
+      const item = document.createElement('div');
+      item.className = 'search-result-item';
 
-      // Update display
-      const display = document.getElementById('weather-current-location');
-      display.querySelector('span:nth-child(2)').textContent = `${name}, ${region}`;
-      display.querySelector('.current-coords').textContent = `${lat}, ${lon}`;
+      const parts = [r.admin1, r.country].filter(Boolean);
+      item.innerHTML = `
+        <span class="search-result-name">${r.name}</span>
+        <span class="search-result-region">${parts.join(', ')}</span>
+      `;
 
-      searchResults.classList.remove('open');
-    });
-  });
+      item.addEventListener('click', () => {
+        const locName = `${r.name}, ${parts.join(', ')}`;
+        weatherSearch.value = locName;
+        weatherLat.value = r.latitude;
+        weatherLon.value = r.longitude;
+        weatherTz.value  = r.timezone || '';
 
-  // Save button (UI only)
-  document.getElementById('btn-weather-save').addEventListener('click', () => {
-    // TODO: wire to backend
-    const btn = document.getElementById('btn-weather-save');
-    const orig = btn.textContent;
-    btn.textContent = '✓ Saved';
-    btn.style.background = '#50fa7b';
-    btn.style.color = '#000';
+        displayName.textContent   = locName;
+        displayCoords.textContent = `${r.latitude}, ${r.longitude}`;
+
+        searchResults.classList.remove('open');
+      });
+
+      searchResults.appendChild(item);
+    }
+
+    searchResults.classList.add('open');
+  }
+
+  // ── Save weather settings ──
+  document.getElementById('btn-weather-save').addEventListener('click', async () => {
+    const btn    = document.getElementById('btn-weather-save');
+    const status = document.getElementById('weather-save-status');
+
+    const tempUnit = document.querySelector('input[name="temp-unit"]:checked')?.value || 'celsius';
+    const windUnit = document.querySelector('input[name="wind-unit"]:checked')?.value || 'kmh';
+
+    const lat = weatherLat.value.trim();
+    const lon = weatherLon.value.trim();
+    const tz  = weatherTz.value.trim();
+
+    // Basic validation
+    if (!lat || !lon || isNaN(parseFloat(lat)) || isNaN(parseFloat(lon))) {
+      status.textContent = '⚠ Enter valid coordinates';
+      status.style.color = '#ff5555';
+      setTimeout(() => { status.textContent = ''; }, 3000);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const locName = displayName.textContent !== '—'
+        ? displayName.textContent
+        : `${lat}, ${lon}`;
+
+      const res = await fetch('/api/settings/weather', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lat, lon, tz,
+          location_name: locName,
+          temp_unit: tempUnit,
+          wind_unit: windUnit,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+
+      displayCoords.textContent = `${lat}, ${lon}`;
+      if (displayName.textContent === '—') displayName.textContent = locName;
+
+      btn.textContent = '✓ Saved';
+      btn.style.background = '#50fa7b';
+      btn.style.color = '#000';
+      status.textContent = 'Weather will update on the next worker cycle (~5 min).';
+      status.style.color = '#8b8b8b';
+    } catch (e) {
+      btn.textContent = '✕ Error';
+      btn.style.background = '#ff5555';
+      btn.style.color = '#fff';
+      status.textContent = e.message;
+      status.style.color = '#ff5555';
+    }
+
     setTimeout(() => {
-      btn.textContent = orig;
+      btn.textContent = 'Save Weather Settings';
       btn.style.background = '';
       btn.style.color = '';
-    }, 1500);
+      btn.disabled = false;
+    }, 2000);
   });
 
 })();

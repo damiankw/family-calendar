@@ -70,6 +70,8 @@ function initialise(db) {
   seedSetting.run('weather_lon', '144.9631');
   seedSetting.run('weather_tz',  'Australia/Melbourne');
   seedSetting.run('weather_location_name', 'Melbourne, Australia');
+  seedSetting.run('weather_temp_unit', 'celsius');       // celsius | fahrenheit
+  seedSetting.run('weather_wind_unit', 'kmh');           // ms | kmh | mph
 }
 
 // ───────── Event helpers ─────────
