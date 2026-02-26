@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calendar Wallboard — Settings</title>
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -393,27 +394,116 @@
         <div class="section-header">
           <div>
             <h1>Reminders</h1>
-            <p class="section-desc">Persistent, recurring reminders for things that happen on a schedule — bin day, library day, sports day, and more.</p>
+            <p class="section-desc">Recurring reminders for things that happen on a schedule — bin day, library day, sports day, and more.</p>
           </div>
-          <button class="btn btn-primary disabled" id="btn-add-reminder">
+          <button class="btn btn-primary" id="btn-add-reminder">
             <span class="btn-icon">+</span> Add Reminder
           </button>
         </div>
 
-        <div class="coming-soon-card">
-          <span class="coming-soon-icon">🔁</span>
-          <h3>Coming Soon</h3>
-          <p>Set up recurring reminders that repeat weekly, fortnightly, or monthly. Perfect for bin night, library day, sports uniform day, language day, and other rotating schedules.</p>
-          <div class="planned-features">
-            <span class="feature-tag">Weekly rotation</span>
-            <span class="feature-tag">Fortnightly rotation</span>
-            <span class="feature-tag">Monthly rotation</span>
-            <span class="feature-tag">Custom icons</span>
-            <span class="feature-tag">Day-of highlight</span>
-            <span class="feature-tag">Night-before alerts</span>
-          </div>
+        <div class="card-list" id="reminder-list"></div>
+        <div class="empty-state" id="reminder-empty">
+          <span style="font-size:28px">🔁</span>
+          <p>No reminders yet — add one above.</p>
         </div>
       </section>
+
+      <!-- Reminder add/edit modal -->
+      <div class="modal-overlay" id="modal-reminder">
+        <div class="modal" style="max-width: 480px;">
+          <div class="modal-header">
+            <h2 id="modal-reminder-title">Add Reminder</h2>
+            <button class="btn-icon-only" id="modal-reminder-close"><span>✕</span></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input type="text" class="form-input" id="rem-title" placeholder="e.g. Bin Night">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Repeats</label>
+              <select class="form-select" id="rem-recurrence">
+                <option value="weekly">Every week</option>
+                <option value="fortnightly">Every fortnight</option>
+                <option value="monthly">Every month</option>
+              </select>
+            </div>
+
+            <!-- Weekly / fortnightly: pick day of week -->
+            <div class="form-group" id="rem-dow-group">
+              <label class="form-label">Day of week</label>
+              <select class="form-select" id="rem-dow">
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </div>
+
+            <!-- Monthly: pick day of month -->
+            <div class="form-group" id="rem-dom-group" style="display:none">
+              <label class="form-label">Day of month <span style="color:#ff5555">*</span></label>
+              <input type="number" class="form-input" id="rem-dom" min="1" max="31" placeholder="15" required>
+              <span class="form-hint">Which day of the month should this reminder occur on? (1–31)</span>
+            </div>
+
+            <!-- Fortnightly: anchor date -->
+            <div class="form-group" id="rem-start-group" style="display:none">
+              <label class="form-label">Starting from <span style="color:#ff5555">*</span></label>
+              <input type="date" class="form-input" id="rem-start" required>
+              <span class="form-hint">Pick any date this reminder should fall on — the fortnightly cycle counts from here.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Colour</label>
+              <div class="color-picker" id="rem-color-picker">
+                <button class="color-swatch selected" data-color="#ff79c6" style="background:#ff79c6"></button>
+                <button class="color-swatch" data-color="#50fa7b" style="background:#50fa7b"></button>
+                <button class="color-swatch" data-color="#8be9fd" style="background:#8be9fd"></button>
+                <button class="color-swatch" data-color="#ffb86c" style="background:#ffb86c"></button>
+                <button class="color-swatch" data-color="#bd93f9" style="background:#bd93f9"></button>
+                <button class="color-swatch" data-color="#f1fa8c" style="background:#f1fa8c"></button>
+                <button class="color-swatch" data-color="#ff5555" style="background:#ff5555"></button>
+                <button class="color-swatch" data-color="#ffffff" style="background:#ffffff"></button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Icon</label>
+              <div class="icon-picker" id="rem-icon-picker">
+                <input type="text" class="form-input" id="rem-icon-search" placeholder="Search icons…" autocomplete="off">
+                <input type="hidden" id="rem-icon" value="fa-bell">
+                <div class="icon-grid" id="rem-icon-grid"></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" id="btn-reminder-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-reminder-save">Add Reminder</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reminder delete confirmation -->
+      <div class="modal-overlay" id="modal-reminder-delete">
+        <div class="modal modal-sm">
+          <div class="modal-header">
+            <h2>Remove Reminder</h2>
+            <button class="btn-icon-only" id="modal-rem-delete-close"><span>✕</span></button>
+          </div>
+          <div class="modal-body">
+            <p>Remove <strong id="delete-rem-name"></strong>? This cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" id="btn-rem-delete-cancel">Cancel</button>
+            <button class="btn btn-danger" id="btn-rem-delete-confirm">Remove</button>
+          </div>
+        </div>
+      </div>
 
       <!-- ═══════ WORKPLACES ═══════ -->
       <section class="settings-section" id="section-workplaces">

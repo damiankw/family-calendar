@@ -616,6 +616,330 @@
   });
 
   // ═══════════════════════════════════════
+  //  REMINDERS — fully wired to backend
+  // ═══════════════════════════════════════
+
+  const DOW_LABELS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const RECUR_LABELS = { weekly: 'Every week', fortnightly: 'Every fortnight', monthly: 'Every month' };
+
+  const remList   = document.getElementById('reminder-list');
+  const remEmpty  = document.getElementById('reminder-empty');
+  let reminders   = [];
+  let editingRemId = null;
+  let deletingRemId = null;
+
+  // ── Load ──
+  async function loadReminders() {
+    try {
+      const res = await fetch('/api/reminders');
+      reminders = await res.json();
+      renderReminderList();
+    } catch (e) { console.warn('Failed to load reminders:', e); }
+  }
+  loadReminders();
+
+  // ── Render list ──
+  function renderReminderList() {
+    remList.innerHTML = '';
+    if (!reminders.length) { remEmpty.style.display = ''; return; }
+    remEmpty.style.display = 'none';
+
+    for (const r of reminders) {
+      const card = document.createElement('div');
+      card.className = 'card' + (r.enabled ? '' : ' card-disabled');
+      card.dataset.id = r.id;
+
+      let schedule = RECUR_LABELS[r.recurrence] || r.recurrence;
+      if (r.recurrence === 'monthly') {
+        schedule += ` on the ${ordinal(r.day_of_month)}`;
+      } else {
+        schedule += ` on ${DOW_LABELS[r.day_of_week] || '?'}`;
+      }
+
+      card.innerHTML = `
+        <div class="card-left">
+          <i class="fa-solid ${esc(r.icon || 'fa-bell')}" style="font-size:20px;color:${esc(r.color || '#ff79c6')}"></i>
+          <div class="card-info">
+            <span class="card-title">${esc(r.title)}</span>
+            <span class="card-subtitle">${schedule}</span>
+          </div>
+        </div>
+        <div class="card-right">
+          <label class="toggle-switch" title="Enable/disable">
+            <input type="checkbox" ${r.enabled ? 'checked' : ''}>
+            <span class="toggle-track"></span>
+          </label>
+          <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
+          <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+        </div>
+      `;
+
+      card.querySelector('.toggle-switch input').addEventListener('change', async () => {
+        await fetch(`/api/reminders/${r.id}/toggle`, { method: 'PATCH' });
+        await loadReminders();
+      });
+      card.querySelector('.btn-edit').addEventListener('click', () => openRemEditModal(r));
+      card.querySelector('.btn-delete').addEventListener('click', () => openRemDeleteModal(r));
+
+      remList.appendChild(card);
+    }
+  }
+
+  function ordinal(n) {
+    const s = ['th','st','nd','rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  // ── Recurrence toggle visibility ──
+  const remRecurrence  = document.getElementById('rem-recurrence');
+  const remDowGroup    = document.getElementById('rem-dow-group');
+  const remStartGroup  = document.getElementById('rem-start-group');
+  const remDomGroup    = document.getElementById('rem-dom-group');
+
+  function syncRecurrenceFields() {
+    const val = remRecurrence.value;
+    remDowGroup.style.display   = (val === 'weekly' || val === 'fortnightly') ? '' : 'none';
+    remStartGroup.style.display = (val === 'fortnightly') ? '' : 'none';
+    remDomGroup.style.display   = (val === 'monthly') ? '' : 'none';
+
+    // Auto-fill sensible defaults when switching recurrence type
+    const today = new Date();
+    if (val === 'fortnightly' && !document.getElementById('rem-start').value) {
+      document.getElementById('rem-start').value = today.toISOString().slice(0, 10);
+    }
+    if (val === 'monthly' && !document.getElementById('rem-dom').value) {
+      document.getElementById('rem-dom').value = today.getDate();
+    }
+
+    // Scroll the newly-visible field into view inside the modal
+    setTimeout(() => {
+      const target = val === 'fortnightly' ? remStartGroup
+                   : val === 'monthly'     ? remDomGroup
+                   : null;
+      if (target && target.style.display !== 'none') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 50);
+  }
+  remRecurrence.addEventListener('change', syncRecurrenceFields);
+
+  // ── Color swatches (uses same .color-swatch/.selected pattern as calendars) ──
+  const remColorPicker = document.getElementById('rem-color-picker');
+  const remColorSwatches = remColorPicker.querySelectorAll('.color-swatch');
+  let remSelectedColor = '#ff79c6';
+
+  remColorSwatches.forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      remColorSwatches.forEach(s => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+      remSelectedColor = swatch.dataset.color;
+    });
+  });
+
+  // ── Font Awesome icon picker ──
+  const FA_ICONS = [
+    'fa-trash-can','fa-recycle','fa-dumpster','fa-broom',
+    'fa-bell','fa-calendar','fa-clock','fa-alarm-clock',
+    'fa-book','fa-book-open','fa-graduation-cap','fa-school',
+    'fa-football','fa-basketball','fa-baseball','fa-soccer-ball',
+    'fa-swimmer','fa-running','fa-bicycle','fa-dumbbell',
+    'fa-guitar','fa-music','fa-paint-brush','fa-palette',
+    'fa-shirt','fa-socks','fa-hat-wizard',
+    'fa-dog','fa-cat','fa-paw','fa-fish',
+    'fa-pills','fa-syringe','fa-stethoscope','fa-heart-pulse',
+    'fa-car','fa-bus','fa-plane','fa-train',
+    'fa-house','fa-key','fa-lightbulb','fa-plug',
+    'fa-utensils','fa-mug-hot','fa-wine-glass','fa-pizza-slice',
+    'fa-basket-shopping','fa-cart-shopping','fa-bag-shopping',
+    'fa-money-bill','fa-credit-card','fa-envelope','fa-phone',
+    'fa-leaf','fa-seedling','fa-tree','fa-sun',
+    'fa-droplet','fa-fire','fa-snowflake','fa-cloud',
+    'fa-gift','fa-cake-candles','fa-champagne-glasses','fa-star',
+    'fa-gamepad','fa-puzzle-piece','fa-dice','fa-chess',
+    'fa-broom','fa-spray-can','fa-bucket','fa-soap',
+    'fa-truck','fa-box','fa-toolbox','fa-wrench',
+    'fa-baby','fa-child','fa-user-doctor','fa-people-group',
+  ];
+
+  const iconGrid   = document.getElementById('rem-icon-grid');
+  const iconSearch  = document.getElementById('rem-icon-search');
+  const iconHidden  = document.getElementById('rem-icon');
+  let selectedIcon  = 'fa-bell';
+
+  function renderIconGrid(filter) {
+    iconGrid.innerHTML = '';
+    const q = (filter || '').toLowerCase().replace(/[^a-z]/g, '');
+    // deduplicate
+    const seen = new Set();
+    const icons = FA_ICONS.filter(ic => {
+      if (seen.has(ic)) return false;
+      seen.add(ic);
+      return !q || ic.replace('fa-', '').includes(q);
+    });
+    for (const ic of icons.slice(0, 40)) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'icon-option' + (ic === selectedIcon ? ' selected' : '');
+      btn.innerHTML = `<i class="fa-solid ${ic}"></i>`;
+      btn.title = ic.replace('fa-', '');
+      btn.addEventListener('click', () => {
+        iconGrid.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedIcon = ic;
+        iconHidden.value = ic;
+      });
+      iconGrid.appendChild(btn);
+    }
+  }
+
+  renderIconGrid('');
+  iconSearch.addEventListener('input', () => renderIconGrid(iconSearch.value));
+
+  function setIconSelection(iconClass) {
+    selectedIcon = iconClass || 'fa-bell';
+    iconHidden.value = selectedIcon;
+    iconSearch.value = '';
+    renderIconGrid('');
+  }
+
+  // ── Add button ──
+  document.getElementById('btn-add-reminder').addEventListener('click', () => {
+    editingRemId = null;
+    document.getElementById('modal-reminder-title').textContent = 'Add Reminder';
+    document.getElementById('btn-reminder-save').textContent = 'Add Reminder';
+    document.getElementById('rem-title').value = '';
+    setIconSelection('fa-bell');
+    remRecurrence.value = 'weekly';
+    document.getElementById('rem-dow').value = '1';
+    document.getElementById('rem-dom').value = new Date().getDate();
+    document.getElementById('rem-start').value = new Date().toISOString().slice(0, 10);
+    remSelectedColor = '#ff79c6';
+    remColorSwatches.forEach(s => s.classList.toggle('selected', s.dataset.color === remSelectedColor));
+    syncRecurrenceFields();
+    openModal('modal-reminder');
+  });
+
+  // ── Edit ──
+  function openRemEditModal(r) {
+    editingRemId = r.id;
+    document.getElementById('modal-reminder-title').textContent = 'Edit Reminder';
+    document.getElementById('btn-reminder-save').textContent = 'Save Changes';
+    document.getElementById('rem-title').value = r.title;
+    setIconSelection(r.icon || 'fa-bell');
+    remRecurrence.value = r.recurrence;
+    document.getElementById('rem-dow').value = r.day_of_week ?? '1';
+    document.getElementById('rem-dom').value = r.day_of_month ?? '';
+    document.getElementById('rem-start').value = r.start_date || '';
+    remSelectedColor = r.color || '#ff79c6';
+    remColorSwatches.forEach(s => s.classList.toggle('selected', s.dataset.color === remSelectedColor));
+    syncRecurrenceFields();
+    openModal('modal-reminder');
+  }
+
+  // ── Close ──
+  document.getElementById('modal-reminder-close').addEventListener('click', () => closeModal('modal-reminder'));
+  document.getElementById('btn-reminder-cancel').addEventListener('click', () => closeModal('modal-reminder'));
+
+  // ── Save ──
+  document.getElementById('btn-reminder-save').addEventListener('click', async () => {
+    const btn   = document.getElementById('btn-reminder-save');
+    const title = document.getElementById('rem-title').value.trim();
+    const icon  = document.getElementById('rem-icon').value.trim() || 'fa-bell';
+    const recurrence = remRecurrence.value;
+
+    if (!title) {
+      document.getElementById('rem-title').focus();
+      document.getElementById('rem-title').style.borderColor = '#ff5555';
+      setTimeout(() => { document.getElementById('rem-title').style.borderColor = ''; }, 2000);
+      return;
+    }
+
+    // Validate recurrence-specific fields
+    if (recurrence === 'fortnightly' && !document.getElementById('rem-start').value) {
+      const el = document.getElementById('rem-start');
+      el.focus();
+      el.style.borderColor = '#ff5555';
+      setTimeout(() => { el.style.borderColor = ''; }, 2000);
+      return;
+    }
+    if (recurrence === 'monthly') {
+      const domVal = parseInt(document.getElementById('rem-dom').value, 10);
+      if (!domVal || domVal < 1 || domVal > 31) {
+        const el = document.getElementById('rem-dom');
+        el.focus();
+        el.style.borderColor = '#ff5555';
+        setTimeout(() => { el.style.borderColor = ''; }, 2000);
+        return;
+      }
+    }
+
+    const body = { title, icon, color: remSelectedColor, recurrence };
+    if (recurrence === 'monthly') {
+      body.day_of_month = parseInt(document.getElementById('rem-dom').value, 10);
+      body.day_of_week = null;
+      body.start_date = null;
+    } else {
+      body.day_of_week = parseInt(document.getElementById('rem-dow').value, 10);
+      body.day_of_month = null;
+      body.start_date = recurrence === 'fortnightly' ? document.getElementById('rem-start').value : null;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      let res;
+      if (editingRemId) {
+        res = await fetch(`/api/reminders/${editingRemId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      } else {
+        res = await fetch('/api/reminders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      }
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || `Server ${res.status}`); }
+      closeModal('modal-reminder');
+      await loadReminders();
+    } catch (e) { alert('Error saving reminder: ' + e.message); }
+
+    btn.disabled = false;
+    btn.textContent = editingRemId ? 'Save Changes' : 'Add Reminder';
+  });
+
+  // ── Delete ──
+  function openRemDeleteModal(r) {
+    deletingRemId = r.id;
+    document.getElementById('delete-rem-name').textContent = r.title;
+    openModal('modal-reminder-delete');
+  }
+
+  document.getElementById('modal-rem-delete-close').addEventListener('click', () => closeModal('modal-reminder-delete'));
+  document.getElementById('btn-rem-delete-cancel').addEventListener('click', () => closeModal('modal-reminder-delete'));
+  document.getElementById('btn-rem-delete-confirm').addEventListener('click', async () => {
+    if (!deletingRemId) return;
+    const btn = document.getElementById('btn-rem-delete-confirm');
+    btn.disabled = true;
+    btn.textContent = 'Removing…';
+
+    try {
+      const res = await fetch(`/api/reminders/${deletingRemId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Server ${res.status}`);
+      closeModal('modal-reminder-delete');
+      await loadReminders();
+    } catch (e) { alert('Error removing reminder: ' + e.message); }
+
+    btn.disabled = false;
+    btn.textContent = 'Remove';
+    deletingRemId = null;
+  });
+
+  // ═══════════════════════════════════════
   //  WEATHER — fully wired to backend
   // ═══════════════════════════════════════
 

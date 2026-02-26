@@ -329,6 +329,7 @@ html, body {
   gap: 0.3vw;
   margin-bottom: 0.3vh;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .day-number {
@@ -342,6 +343,14 @@ html, body {
   font-size: 0.7vw;
   line-height: 1;
   color: #f1c40f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reminder-tag {
+  font-size: 0.7vw;
+  line-height: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

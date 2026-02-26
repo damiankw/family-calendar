@@ -36,6 +36,9 @@
   // Keyed by "MM-DD" → array of { name, year }
   let birthdaysMap = {};
 
+  // Raw reminder objects from the API
+  let remindersRaw = [];
+
   // Unit settings (fetched from API)
   let tempSymbol = '°';
   let windLabel  = 'km/h';
@@ -67,6 +70,42 @@
     } catch (e) {
       console.warn('Failed to fetch birthdays:', e);
     }
+  }
+
+  async function fetchReminders() {
+    try {
+      const res  = await fetch('/api/reminders/enabled');
+      remindersRaw = await res.json();
+    } catch (e) {
+      console.warn('Failed to fetch reminders:', e);
+    }
+  }
+
+  // Check if a reminder fires on a given date (JS Date object)
+  function reminderMatchesDate(r, date) {
+    const dow = date.getDay(); // 0=Sun…6=Sat
+    if (r.recurrence === 'weekly') {
+      return dow === r.day_of_week;
+    }
+    if (r.recurrence === 'fortnightly') {
+      if (dow !== r.day_of_week) return false;
+      if (!r.start_date) return true; // no anchor → treat as weekly
+      // Compare using UTC-normalised midnights to avoid timezone drift
+      const dateUtc   = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+      const [ay, am, ad] = r.start_date.split('-').map(Number);
+      const anchorUtc = Date.UTC(ay, am - 1, ad);
+      const diffDays  = Math.round((dateUtc - anchorUtc) / 86400000);
+      return (diffDays % 14 + 14) % 14 === 0;
+    }
+    if (r.recurrence === 'monthly') {
+      return date.getDate() === r.day_of_month;
+    }
+    return false;
+  }
+
+  // Get reminders that fire on a specific date
+  function remindersForDate(date) {
+    return remindersRaw.filter(r => reminderMatchesDate(r, date));
   }
 
   async function fetchEvents() {
@@ -142,8 +181,16 @@
       const todayBdays = birthdaysForDate(now.getMonth() + 1, now.getDate());
       const tomBdays   = birthdaysForDate(tom.getMonth() + 1, tom.getDate());
 
-      renderEventsList('events-today', [...todayBdays, ...todayEvents]);
-      renderEventsList('events-tomorrow', [...tomBdays, ...tomEvents]);
+      // Inject reminders after birthdays
+      const todayRems = remindersForDate(now).map(r => ({
+        time: null, color: r.color, title: r.title, _reminder: true, _icon: r.icon || 'fa-bell'
+      }));
+      const tomRems = remindersForDate(tom).map(r => ({
+        time: null, color: r.color, title: r.title, _icon: r.icon || 'fa-bell', _reminder: true
+      }));
+
+      renderEventsList('events-today', [...todayBdays, ...todayRems, ...todayEvents]);
+      renderEventsList('events-tomorrow', [...tomBdays, ...tomRems, ...tomEvents]);
     } catch (e) {
       console.warn('Failed to fetch today/tomorrow events:', e);
     }
@@ -179,18 +226,27 @@
     for (const ev of events) {
       const li = document.createElement('li');
       li.className = 'event';
-      let timeHtml;
-      if (ev._birthday) {
-        timeHtml = '<span class="event-time all-day">\uD83C\uDF82</span>';
+      if (ev._reminder) {
+        // Reminder: "Reminder" in time slot, coloured icon where dot goes, then title
+        li.innerHTML = `
+          <span class="event-time all-day">Reminder</span>
+          <span class="event-dot" style="background:transparent; display:flex; align-items:center; justify-content:center"><i class="fa-solid ${ev._icon || 'fa-bell'}" style="color:${ev.color || '#ff79c6'}; font-size:1vw"></i></span>
+          <span class="event-title">${ev.title}</span>
+        `;
       } else {
-        const displayTime = (!ev.time || ev.time === '00:00') ? 'All Day' : ev.time;
-        timeHtml = `<span class="event-time${displayTime === 'All Day' ? ' all-day' : ''}">${displayTime}</span>`;
+        let timeHtml;
+        if (ev._birthday) {
+          timeHtml = '<span class="event-time all-day">\uD83C\uDF82</span>';
+        } else {
+          const displayTime = (!ev.time || ev.time === '00:00') ? 'All Day' : ev.time;
+          timeHtml = `<span class="event-time${displayTime === 'All Day' ? ' all-day' : ''}">${displayTime}</span>`;
+        }
+        li.innerHTML = `
+          ${timeHtml}
+          <span class="event-dot" style="background:${ev.color || '#8be9fd'}"></span>
+          <span class="event-title">${ev.title}</span>
+        `;
       }
-      li.innerHTML = `
-        ${timeHtml}
-        <span class="event-dot" style="background:${ev.color || '#8be9fd'}"></span>
-        <span class="event-title">${ev.title}</span>
-      `;
       ul.appendChild(li);
     }
   }
@@ -234,20 +290,41 @@
     const eventsDiv = document.createElement('div');
     eventsDiv.className = 'day-events';
 
+    // Inject reminders at the top of the events list
+    const cellDate = new Date(year, month, day);
+    const dayReminders = remindersForDate(cellDate);
+    const reminderItems = dayReminders.map(r => ({
+      title: r.title,
+      color: r.color || '#ff79c6',
+      _reminderIcon: r.icon || 'fa-bell',
+    }));
+
     const key = dateKey(year, month, day);
     const events = eventsMap[key] || [];
 
-    const visible = events.slice(0, MAX_VISIBLE_EVENTS);
-    const remaining = events.length - visible.length;
+    // Combine reminders + events, then apply the visible limit
+    const combined = [...reminderItems, ...events];
+    const visible = combined.slice(0, MAX_VISIBLE_EVENTS);
+    const remaining = combined.length - visible.length;
 
     visible.forEach(ev => {
       const item = document.createElement('div');
       item.className = 'cal-event';
 
-      const dot = document.createElement('span');
-      dot.className = 'cal-event-dot';
-      dot.style.background = ev.color;
-      item.appendChild(dot);
+      if (ev._reminderIcon) {
+        // Render reminder with FA icon instead of dot
+        const icon = document.createElement('i');
+        icon.className = `fa-solid ${ev._reminderIcon}`;
+        icon.style.color = ev.color;
+        icon.style.fontSize = '0.65vw';
+        icon.style.flexShrink = '0';
+        item.appendChild(icon);
+      } else {
+        const dot = document.createElement('span');
+        dot.className = 'cal-event-dot';
+        dot.style.background = ev.color;
+        item.appendChild(dot);
+      }
 
       const text = document.createElement('span');
       text.className = 'cal-event-text';
@@ -350,7 +427,7 @@
   // ───────── Refresh cycle ─────────
   async function refreshAll() {
     await fetchWeatherSettings();
-    await Promise.all([fetchEvents(), fetchWeather(), fetchBirthdays()]);
+    await Promise.all([fetchEvents(), fetchWeather(), fetchBirthdays(), fetchReminders()]);
     buildCalendar();
     await fetchTodayTomorrow();
   }

@@ -181,6 +181,53 @@ app.delete('/api/birthdays/:id', (req, res) => {
   res.json({ ok: true, id });
 });
 
+// ───────── Reminders API ─────────
+
+// GET /api/reminders — list all reminders
+app.get('/api/reminders', (_req, res) => {
+  res.json(db.getAllReminders());
+});
+
+// GET /api/reminders/enabled — only enabled reminders (for wallboard)
+app.get('/api/reminders/enabled', (_req, res) => {
+  res.json(db.getEnabledReminders());
+});
+
+// POST /api/reminders — create a reminder
+app.post('/api/reminders', (req, res) => {
+  try {
+    const id = db.createReminder(req.body);
+    res.json({ ok: true, id });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// PUT /api/reminders/:id — update a reminder
+app.put('/api/reminders/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!db.getReminder(id)) return res.status(404).json({ error: 'Reminder not found' });
+  db.updateReminder(id, req.body);
+  res.json(db.getReminder(id));
+});
+
+// PATCH /api/reminders/:id/toggle — toggle enabled
+app.patch('/api/reminders/:id/toggle', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const r = db.getReminder(id);
+  if (!r) return res.status(404).json({ error: 'Reminder not found' });
+  db.updateReminder(id, { enabled: r.enabled ? 0 : 1 });
+  res.json(db.getReminder(id));
+});
+
+// DELETE /api/reminders/:id — delete a reminder
+app.delete('/api/reminders/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!db.getReminder(id)) return res.status(404).json({ error: 'Reminder not found' });
+  db.deleteReminder(id);
+  res.json({ ok: true, id });
+});
+
 // GET /api/geocode?q=... — proxy to Open-Meteo geocoding (avoids CORS)
 app.get('/api/geocode', async (req, res) => {
   const q = req.query.q;

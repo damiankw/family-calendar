@@ -84,6 +84,19 @@ function initialise(db) {
     );
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_birthdays_date_name ON birthdays(month, day, name);
+
+    CREATE TABLE IF NOT EXISTS reminders (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      title         TEXT    NOT NULL,
+      icon          TEXT    DEFAULT 'fa-bell',  -- FA icon class shown on the calendar
+      color         TEXT    DEFAULT '#ff79c6',
+      recurrence    TEXT    NOT NULL,            -- 'weekly', 'fortnightly', 'monthly'
+      day_of_week   INTEGER,                     -- 0=Sun … 6=Sat  (weekly / fortnightly)
+      day_of_month  INTEGER,                     -- 1-31            (monthly)
+      start_date    TEXT,                         -- YYYY-MM-DD anchor for fortnightly calc
+      enabled       INTEGER DEFAULT 1,
+      created_at    TEXT    DEFAULT (datetime('now'))
+    );
   `);
 
   // Seed default settings (INSERT OR IGNORE so user changes are preserved)
@@ -299,6 +312,51 @@ function deleteBirthday(id) {
   db.prepare('DELETE FROM birthdays WHERE id = ?').run(id);
 }
 
+// ───────── Reminder helpers ─────────
+function getAllReminders() {
+  const db = getDb();
+  return db.prepare('SELECT * FROM reminders ORDER BY title').all();
+}
+
+function getReminder(id) {
+  const db = getDb();
+  return db.prepare('SELECT * FROM reminders WHERE id = ?').get(id) || null;
+}
+
+function getEnabledReminders() {
+  const db = getDb();
+  return db.prepare('SELECT * FROM reminders WHERE enabled = 1 ORDER BY title').all();
+}
+
+function createReminder({ title, icon, color, recurrence, day_of_week, day_of_month, start_date }) {
+  const db = getDb();
+  const result = db.prepare(`
+    INSERT INTO reminders (title, icon, color, recurrence, day_of_week, day_of_month, start_date)
+    VALUES (@title, @icon, @color, @recurrence, @day_of_week, @day_of_month, @start_date)
+  `).run({ title, icon: icon || 'fa-bell', color: color || '#ff79c6', recurrence, day_of_week: day_of_week ?? null, day_of_month: day_of_month ?? null, start_date: start_date || null });
+  return result.lastInsertRowid;
+}
+
+function updateReminder(id, fields) {
+  const db = getDb();
+  const allowed = ['title', 'icon', 'color', 'recurrence', 'day_of_week', 'day_of_month', 'start_date', 'enabled'];
+  const sets = [];
+  const params = { id };
+  for (const key of allowed) {
+    if (fields[key] !== undefined) {
+      sets.push(`${key} = @${key}`);
+      params[key] = fields[key] ?? null;
+    }
+  }
+  if (!sets.length) return;
+  db.prepare(`UPDATE reminders SET ${sets.join(', ')} WHERE id = @id`).run(params);
+}
+
+function deleteReminder(id) {
+  const db = getDb();
+  db.prepare('DELETE FROM reminders WHERE id = ?').run(id);
+}
+
 // ───────── Cleanup ─────────
 function close() {
   if (_db) {
@@ -331,5 +389,11 @@ module.exports = {
   createBirthday,
   updateBirthday,
   deleteBirthday,
+  getAllReminders,
+  getReminder,
+  getEnabledReminders,
+  createReminder,
+  updateReminder,
+  deleteReminder,
   close,
 };
