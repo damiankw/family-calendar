@@ -38,11 +38,11 @@ app.post('/api/setup/init', (req, res) => {
     // Create admin user
     db.createUser(username, password);
 
-    // Set weather location
-    db.setSetting('weather_location_name', location || 'Your Location');
-    db.setSetting('weather_lat', String(lat || '-37.8136'));
-    db.setSetting('weather_lon', String(lon || '144.9631'));
-    db.setSetting('weather_tz', tz || 'Australia/Melbourne');
+    // Set weather location (only if provided)
+    if (location) db.setSetting('weather_location_name', location);
+    if (lat != null) db.setSetting('weather_lat', String(lat));
+    if (lon != null) db.setSetting('weather_lon', String(lon));
+    if (tz) db.setSetting('weather_tz', tz);
 
     // Create calendar if provided
     if (calendar_name && calendar_type) {
@@ -178,10 +178,10 @@ app.post('/api/calendars/:id/sync', async (req, res) => {
 // GET /api/settings/weather — return all weather-related settings
 app.get('/api/settings/weather', (_req, res) => {
   res.json({
-    lat:           db.getSetting('weather_lat')           || '-37.8136',
-    lon:           db.getSetting('weather_lon')           || '144.9631',
-    tz:            db.getSetting('weather_tz')            || 'Australia/Melbourne',
-    location_name: db.getSetting('weather_location_name') || 'Melbourne, Australia',
+    lat:           db.getSetting('weather_lat')           || null,
+    lon:           db.getSetting('weather_lon')           || null,
+    tz:            db.getSetting('weather_tz')            || null,
+    location_name: db.getSetting('weather_location_name') || null,
     temp_unit:     db.getSetting('weather_temp_unit')     || 'celsius',
     wind_unit:     db.getSetting('weather_wind_unit')     || 'kmh',
   });

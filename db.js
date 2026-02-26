@@ -115,10 +115,7 @@ function initialise(db) {
 
   // Seed default settings (INSERT OR IGNORE so user changes are preserved)
   const seedSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
-  seedSetting.run('weather_lat', '-37.8136');          // Melbourne, Australia
-  seedSetting.run('weather_lon', '144.9631');
-  seedSetting.run('weather_tz',  'Australia/Melbourne');
-  seedSetting.run('weather_location_name', 'Melbourne, Australia');
+  // Weather location must be set by user during setup - no defaults
   seedSetting.run('weather_temp_unit', 'celsius');       // celsius | fahrenheit
   seedSetting.run('weather_wind_unit', 'kmh');           // ms | kmh | mph
 

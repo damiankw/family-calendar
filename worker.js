@@ -77,11 +77,17 @@ async function fetchWeather() {
   console.log('[worker] Fetching weather …');
 
   // Read location + unit preferences from settings
-  const lat      = db.getSetting('weather_lat')       || '-37.8136';
-  const lon      = db.getSetting('weather_lon')       || '144.9631';
-  const tz       = db.getSetting('weather_tz')        || 'Australia/Melbourne';
+  const lat      = db.getSetting('weather_lat');
+  const lon      = db.getSetting('weather_lon');
+  const tz       = db.getSetting('weather_tz');
   const tempUnit = db.getSetting('weather_temp_unit')  || 'celsius';
   const windUnit = db.getSetting('weather_wind_unit')  || 'kmh';
+
+  // Skip weather fetch if location not configured
+  if (!lat || !lon || !tz) {
+    console.log('[worker] ⚠ Weather location not configured - skipping weather fetch');
+    return;
+  }
 
   // Map our setting keys to Open-Meteo query params
   const omTempUnit = tempUnit === 'fahrenheit' ? 'fahrenheit' : 'celsius';
