@@ -33,6 +33,9 @@
   // Keyed by "YYYY-MM-DD" → array of { title, color, time }
   let eventsMap = {};
 
+  // Keyed by "MM-DD" → array of { name, year }
+  let birthdaysMap = {};
+
   // Unit settings (fetched from API)
   let tempSymbol = '°';
   let windLabel  = 'km/h';
@@ -48,6 +51,21 @@
       windLabel = windMap[s.wind_unit] || 'km/h';
     } catch (e) {
       console.warn('Failed to fetch weather settings:', e);
+    }
+  }
+
+  async function fetchBirthdays() {
+    try {
+      const res  = await fetch('/api/birthdays');
+      const rows = await res.json();
+      birthdaysMap = {};
+      for (const b of rows) {
+        const key = `${String(b.month).padStart(2, '0')}-${String(b.day).padStart(2, '0')}`;
+        if (!birthdaysMap[key]) birthdaysMap[key] = [];
+        birthdaysMap[key].push({ name: b.name, year: b.year });
+      }
+    } catch (e) {
+      console.warn('Failed to fetch birthdays:', e);
     }
   }
 
@@ -120,11 +138,32 @@
       const todayEvents = await todayRes.json();
       const tomEvents   = await tomRes.json();
 
-      renderEventsList('events-today', todayEvents);
-      renderEventsList('events-tomorrow', tomEvents);
+      // Inject birthdays at the top of each day's list
+      const todayBdays = birthdaysForDate(now.getMonth() + 1, now.getDate());
+      const tomBdays   = birthdaysForDate(tom.getMonth() + 1, tom.getDate());
+
+      renderEventsList('events-today', [...todayBdays, ...todayEvents]);
+      renderEventsList('events-tomorrow', [...tomBdays, ...tomEvents]);
     } catch (e) {
       console.warn('Failed to fetch today/tomorrow events:', e);
     }
+  }
+
+  // Build birthday pseudo-events for the left panel schedule
+  function birthdaysForDate(month, day) {
+    const key = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const list = birthdaysMap[key];
+    if (!list || !list.length) return [];
+    return list.map(b => {
+      let label = `\uD83C\uDF82 ${b.name}'s Birthday`;
+      if (b.year) {
+        const now = new Date();
+        let age = now.getFullYear() - b.year;
+        if (now.getMonth() + 1 < month || (now.getMonth() + 1 === month && now.getDate() < day)) age--;
+        label += ` (turns ${age + 1})`;
+      }
+      return { time: null, color: '#f1c40f', title: label, _birthday: true };
+    });
   }
 
   function renderEventsList(elementId, events) {
@@ -140,8 +179,15 @@
     for (const ev of events) {
       const li = document.createElement('li');
       li.className = 'event';
+      let timeHtml;
+      if (ev._birthday) {
+        timeHtml = '<span class="event-time all-day">\uD83C\uDF82</span>';
+      } else {
+        const displayTime = (!ev.time || ev.time === '00:00') ? 'All Day' : ev.time;
+        timeHtml = `<span class="event-time${displayTime === 'All Day' ? ' all-day' : ''}">${displayTime}</span>`;
+      }
       li.innerHTML = `
-        <span class="event-time">${ev.time || ''}</span>
+        ${timeHtml}
         <span class="event-dot" style="background:${ev.color || '#8be9fd'}"></span>
         <span class="event-title">${ev.title}</span>
       `;
@@ -161,11 +207,28 @@
     const cell = document.createElement('div');
     cell.className = 'day-cell' + (extraClasses ? ' ' + extraClasses : '');
 
-    // Day number
+    // Day number header (number + optional birthday icon)
+    const header = document.createElement('div');
+    header.className = 'day-header';
+
     const num = document.createElement('span');
     num.className = 'day-number';
     num.textContent = day;
-    cell.appendChild(num);
+    header.appendChild(num);
+
+    // Birthday indicator(s)
+    const bdayKey = `${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const bdays = birthdaysMap[bdayKey];
+    if (bdays && bdays.length) {
+      for (const b of bdays) {
+        const tag = document.createElement('span');
+        tag.className = 'birthday-tag';
+        tag.innerHTML = `\uD83C\uDF82 ${b.name}`;
+        header.appendChild(tag);
+      }
+    }
+
+    cell.appendChild(header);
 
     // Events container
     const eventsDiv = document.createElement('div');
@@ -287,7 +350,7 @@
   // ───────── Refresh cycle ─────────
   async function refreshAll() {
     await fetchWeatherSettings();
-    await Promise.all([fetchEvents(), fetchWeather()]);
+    await Promise.all([fetchEvents(), fetchWeather(), fetchBirthdays()]);
     buildCalendar();
     await fetchTodayTomorrow();
   }

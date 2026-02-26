@@ -221,6 +221,12 @@ html, body {
   text-align: right;
 }
 
+.event-time.all-day {
+  font-size: 0.7vw;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.3);
+}
+
 .event-dot {
   width: 0.5vw;
   height: 0.5vw;
@@ -316,14 +322,29 @@ html, body {
   border-radius: 0.4vw;
 }
 
-/* Day number */
+/* Day header (number + birthday icon) */
+.day-header {
+  display: flex;
+  align-items: center;
+  gap: 0.3vw;
+  margin-bottom: 0.3vh;
+  flex-shrink: 0;
+}
+
 .day-number {
   font-size: 1vw;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.7);
   line-height: 1;
-  margin-bottom: 0.3vh;
-  flex-shrink: 0;
+}
+
+.birthday-tag {
+  font-size: 0.7vw;
+  line-height: 1;
+  color: #f1c40f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .day-cell.today .day-number {

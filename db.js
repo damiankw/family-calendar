@@ -73,6 +73,17 @@ function initialise(db) {
       key           TEXT PRIMARY KEY,
       value         TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS birthdays (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      name          TEXT    NOT NULL,
+      month         INTEGER NOT NULL,          -- 1-12
+      day           INTEGER NOT NULL,          -- 1-31
+      year          INTEGER,                   -- birth year (nullable, for age calc)
+      created_at    TEXT    DEFAULT (datetime('now'))
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_birthdays_date_name ON birthdays(month, day, name);
   `);
 
   // Seed default settings (INSERT OR IGNORE so user changes are preserved)
@@ -247,6 +258,47 @@ function setSetting(key, value) {
   db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, value);
 }
 
+// ───────── Birthday helpers ─────────
+function getAllBirthdays() {
+  const db = getDb();
+  return db.prepare('SELECT * FROM birthdays ORDER BY month, day, name').all();
+}
+
+function getBirthday(id) {
+  const db = getDb();
+  return db.prepare('SELECT * FROM birthdays WHERE id = ?').get(id) || null;
+}
+
+function getBirthdaysByMonth(month) {
+  const db = getDb();
+  return db.prepare('SELECT * FROM birthdays WHERE month = ? ORDER BY day, name').all(month);
+}
+
+function createBirthday({ name, month, day, year }) {
+  const db = getDb();
+  const result = db.prepare(`
+    INSERT INTO birthdays (name, month, day, year) VALUES (@name, @month, @day, @year)
+  `).run({ name, month, day, year: year || null });
+  return result.lastInsertRowid;
+}
+
+function updateBirthday(id, { name, month, day, year }) {
+  const db = getDb();
+  const fields = [];
+  const params = { id };
+  if (name != null)  { fields.push('name = @name');   params.name = name; }
+  if (month != null) { fields.push('month = @month'); params.month = month; }
+  if (day != null)   { fields.push('day = @day');     params.day = day; }
+  if (year !== undefined) { fields.push('year = @year'); params.year = year || null; }
+  if (!fields.length) return;
+  db.prepare(`UPDATE birthdays SET ${fields.join(', ')} WHERE id = @id`).run(params);
+}
+
+function deleteBirthday(id) {
+  const db = getDb();
+  db.prepare('DELETE FROM birthdays WHERE id = ?').run(id);
+}
+
 // ───────── Cleanup ─────────
 function close() {
   if (_db) {
@@ -273,5 +325,11 @@ module.exports = {
   deleteCalendarSource,
   getSetting,
   setSetting,
+  getAllBirthdays,
+  getBirthday,
+  getBirthdaysByMonth,
+  createBirthday,
+  updateBirthday,
+  deleteBirthday,
   close,
 };

@@ -312,24 +312,81 @@
             <h1>Birthdays</h1>
             <p class="section-desc">Track family & friends' birthdays independently from calendars. Never miss one again.</p>
           </div>
-          <button class="btn btn-primary disabled" id="btn-add-birthday">
+          <button class="btn btn-primary" id="btn-add-birthday">
             <span class="btn-icon">+</span> Add Birthday
           </button>
         </div>
 
-        <div class="coming-soon-card">
-          <span class="coming-soon-icon">🎂</span>
-          <h3>Coming Soon</h3>
-          <p>Add birthdays for family, friends, and important people. The wallboard will show upcoming birthdays with a countdown and highlight them on the calendar.</p>
-          <div class="planned-features">
-            <span class="feature-tag">Name & date</span>
-            <span class="feature-tag">Age tracking</span>
-            <span class="feature-tag">Countdown widget</span>
-            <span class="feature-tag">Calendar overlay</span>
-            <span class="feature-tag">Notification lead time</span>
-          </div>
+        <div class="card-list" id="birthday-list"></div>
+        <div class="empty-state" id="birthday-empty">
+          <p>No birthdays yet. Add one to see it on your calendar!</p>
         </div>
       </section>
+
+      <!-- Birthday add/edit modal -->
+      <div class="modal-overlay" id="modal-birthday">
+        <div class="modal" style="max-width: 420px;">
+          <div class="modal-header">
+            <h2 id="modal-birthday-title">Add Birthday</h2>
+            <button class="btn-icon-only" id="modal-birthday-close"><span>✕</span></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input type="text" class="form-input" id="bday-name" placeholder="e.g. Mum">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Day</label>
+                <input type="number" class="form-input" id="bday-day" min="1" max="31" placeholder="15">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Month</label>
+                <select class="form-select" id="bday-month">
+                  <option value="1">January</option>
+                  <option value="2">February</option>
+                  <option value="3">March</option>
+                  <option value="4">April</option>
+                  <option value="5">May</option>
+                  <option value="6">June</option>
+                  <option value="7">July</option>
+                  <option value="8">August</option>
+                  <option value="9">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Year <span class="form-hint" style="display:inline;margin:0">(optional)</span></label>
+                <input type="number" class="form-input" id="bday-year" min="1900" max="2100" placeholder="1990">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" id="btn-birthday-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-birthday-save">Add Birthday</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Birthday delete confirmation modal -->
+      <div class="modal-overlay" id="modal-birthday-delete">
+        <div class="modal" style="max-width: 400px;">
+          <div class="modal-header">
+            <h2>Remove Birthday</h2>
+            <button class="btn-icon-only" id="modal-bday-delete-close"><span>✕</span></button>
+          </div>
+          <div class="modal-body">
+            <p>Remove <strong id="delete-bday-name"></strong>'s birthday? This cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" id="btn-bday-delete-cancel">Cancel</button>
+            <button class="btn btn-danger" id="btn-bday-delete-confirm">Remove</button>
+          </div>
+        </div>
+      </div>
 
       <!-- ═══════ REMINDERS ═══════ -->
       <section class="settings-section" id="section-reminders">

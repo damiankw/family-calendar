@@ -158,19 +158,23 @@ async function runAll() {
   console.log(`[worker] ── Cycle complete in ${Date.now() - start}ms ──`);
 }
 
-// Run immediately on startup, then every 5 minutes
-runAll();
-const timer = setInterval(runAll, INTERVAL_MS);
+// Export for use inside server.js (embedded mode)
+module.exports = { runAll, INTERVAL_MS };
 
-// Graceful shutdown
-function shutdown() {
-  console.log('\n[worker] Shutting down …');
-  clearInterval(timer);
-  db.close();
-  process.exit(0);
+// ── Standalone mode: if run directly with `node worker.js` ──
+if (require.main === module) {
+  runAll();
+  const timer = setInterval(runAll, INTERVAL_MS);
+
+  function shutdown() {
+    console.log('\n[worker] Shutting down …');
+    clearInterval(timer);
+    db.close();
+    process.exit(0);
+  }
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  console.log(`[worker] Started — polling every ${INTERVAL_MS / 1000}s`);
 }
-
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
-
-console.log(`[worker] Started — polling every ${INTERVAL_MS / 1000}s`);

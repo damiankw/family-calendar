@@ -138,6 +138,49 @@ app.put('/api/settings/weather', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Birthdays CRUD ──
+
+// GET /api/birthdays — list all birthdays
+app.get('/api/birthdays', (_req, res) => {
+  res.json(db.getAllBirthdays());
+});
+
+// GET /api/birthdays/month/:month — birthdays for a specific month (1-12)
+app.get('/api/birthdays/month/:month', (req, res) => {
+  const month = parseInt(req.params.month, 10);
+  if (isNaN(month) || month < 1 || month > 12) return res.status(400).json({ error: 'Invalid month' });
+  res.json(db.getBirthdaysByMonth(month));
+});
+
+// POST /api/birthdays — create a birthday
+app.post('/api/birthdays', (req, res) => {
+  const { name, month, day, year } = req.body;
+  if (!name || !month || !day) return res.status(400).json({ error: 'name, month, and day are required' });
+  try {
+    const id = db.createBirthday({ name, month, day, year });
+    res.status(201).json(db.getBirthday(id));
+  } catch (e) {
+    if (e.message.includes('UNIQUE')) return res.status(409).json({ error: 'Birthday already exists for this person on this date' });
+    throw e;
+  }
+});
+
+// PUT /api/birthdays/:id — update a birthday
+app.put('/api/birthdays/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!db.getBirthday(id)) return res.status(404).json({ error: 'Birthday not found' });
+  db.updateBirthday(id, req.body);
+  res.json(db.getBirthday(id));
+});
+
+// DELETE /api/birthdays/:id — delete a birthday
+app.delete('/api/birthdays/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!db.getBirthday(id)) return res.status(404).json({ error: 'Birthday not found' });
+  db.deleteBirthday(id);
+  res.json({ ok: true, id });
+});
+
 // GET /api/geocode?q=... — proxy to Open-Meteo geocoding (avoids CORS)
 app.get('/api/geocode', async (req, res) => {
   const q = req.query.q;
@@ -163,4 +206,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(PORT, () => {
   console.log(`Calendar wallboard running at http://localhost:${PORT}`);
+
+  // ───────── Embedded worker loop ─────────
+  // Runs the same fetch cycle that worker.js did, but inside the server
+  // process so only one command is needed to start everything.
+  const { runAll, INTERVAL_MS } = require('./worker');
+  runAll();
+  setInterval(runAll, INTERVAL_MS);
+  console.log(`[worker] Background sync every ${INTERVAL_MS / 1000}s`);
 });

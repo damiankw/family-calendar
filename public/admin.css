@@ -251,6 +251,12 @@ html, body {
   flex-shrink: 0;
 }
 
+.bday-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
 .card-info {
   display: flex;
   flex-direction: column;

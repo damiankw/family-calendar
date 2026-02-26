@@ -22,8 +22,20 @@
       sections.forEach(s => {
         s.classList.toggle('active', s.id === `section-${target}`);
       });
+
+      // Remember active tab across refreshes
+      try { localStorage.setItem('admin-tab', target); } catch (_) {}
     });
   });
+
+  // Restore last active tab on load
+  try {
+    const saved = localStorage.getItem('admin-tab');
+    if (saved) {
+      const btn = document.querySelector(`.nav-item[data-section="${saved}"]`);
+      if (btn) btn.click();
+    }
+  } catch (_) {}
 
   // ═══════════════════════════════════════
   //  MODAL HELPERS
@@ -413,6 +425,195 @@
     document.getElementById('ics-url').style.borderColor = '';
     document.getElementById('ics-refresh').value = '30';
   }
+
+  // ═══════════════════════════════════════
+  //  BIRTHDAYS — fully wired to backend
+  // ═══════════════════════════════════════
+
+  const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const bdayList   = document.getElementById('birthday-list');
+  const bdayEmpty  = document.getElementById('birthday-empty');
+  let birthdays    = [];
+  let editingBdayId = null;
+  let deletingBdayId = null;
+
+  // ── Load birthdays ──
+  async function loadBirthdays() {
+    try {
+      const res = await fetch('/api/birthdays');
+      birthdays = await res.json();
+      renderBirthdayList();
+    } catch (e) {
+      console.warn('Failed to load birthdays:', e);
+    }
+  }
+
+  loadBirthdays();
+
+  // ── Render the list ──
+  function renderBirthdayList() {
+    bdayList.innerHTML = '';
+
+    if (!birthdays.length) {
+      bdayEmpty.style.display = '';
+      return;
+    }
+    bdayEmpty.style.display = 'none';
+
+    for (const b of birthdays) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.id = b.id;
+
+      const dateStr = `${b.day} ${MONTH_NAMES[b.month]}`;
+      const ageStr  = b.year ? calcAge(b) : '';
+
+      card.innerHTML = `
+        <div class="card-left">
+          <span class="bday-icon">🎂</span>
+          <div class="card-info">
+            <span class="card-title">${esc(b.name)}</span>
+            <span class="card-subtitle">${dateStr}${ageStr ? ' · ' + ageStr : ''}</span>
+          </div>
+        </div>
+        <div class="card-right">
+          <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
+          <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+        </div>
+      `;
+
+      card.querySelector('.btn-edit').addEventListener('click', () => openBdayEditModal(b));
+      card.querySelector('.btn-delete').addEventListener('click', () => openBdayDeleteModal(b));
+
+      bdayList.appendChild(card);
+    }
+  }
+
+  function calcAge(b) {
+    if (!b.year) return '';
+    const now = new Date();
+    let age = now.getFullYear() - b.year;
+    // Check if birthday hasn't happened yet this year
+    if (now.getMonth() + 1 < b.month || (now.getMonth() + 1 === b.month && now.getDate() < b.day)) {
+      age--;
+    }
+    const nextAge = age + 1;
+    return `Turning ${nextAge}`;
+  }
+
+  // ── Add button ──
+  document.getElementById('btn-add-birthday').addEventListener('click', () => {
+    editingBdayId = null;
+    document.getElementById('modal-birthday-title').textContent = 'Add Birthday';
+    document.getElementById('btn-birthday-save').textContent = 'Add Birthday';
+    document.getElementById('bday-name').value = '';
+    document.getElementById('bday-day').value = '';
+    document.getElementById('bday-month').value = '1';
+    document.getElementById('bday-year').value = '';
+    openModal('modal-birthday');
+  });
+
+  // ── Edit ──
+  function openBdayEditModal(b) {
+    editingBdayId = b.id;
+    document.getElementById('modal-birthday-title').textContent = 'Edit Birthday';
+    document.getElementById('btn-birthday-save').textContent = 'Save Changes';
+    document.getElementById('bday-name').value = b.name;
+    document.getElementById('bday-day').value = b.day;
+    document.getElementById('bday-month').value = b.month;
+    document.getElementById('bday-year').value = b.year || '';
+    openModal('modal-birthday');
+  }
+
+  // ── Close ──
+  document.getElementById('modal-birthday-close').addEventListener('click', () => closeModal('modal-birthday'));
+  document.getElementById('btn-birthday-cancel').addEventListener('click', () => closeModal('modal-birthday'));
+
+  // ── Save ──
+  document.getElementById('btn-birthday-save').addEventListener('click', async () => {
+    const btn   = document.getElementById('btn-birthday-save');
+    const name  = document.getElementById('bday-name').value.trim();
+    const day   = parseInt(document.getElementById('bday-day').value, 10);
+    const month = parseInt(document.getElementById('bday-month').value, 10);
+    const yearVal = document.getElementById('bday-year').value.trim();
+    const year  = yearVal ? parseInt(yearVal, 10) : null;
+
+    if (!name) {
+      document.getElementById('bday-name').focus();
+      document.getElementById('bday-name').style.borderColor = '#ff5555';
+      setTimeout(() => { document.getElementById('bday-name').style.borderColor = ''; }, 2000);
+      return;
+    }
+    if (!day || day < 1 || day > 31) {
+      document.getElementById('bday-day').focus();
+      document.getElementById('bday-day').style.borderColor = '#ff5555';
+      setTimeout(() => { document.getElementById('bday-day').style.borderColor = ''; }, 2000);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      let res;
+      if (editingBdayId) {
+        res = await fetch(`/api/birthdays/${editingBdayId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, month, day, year }),
+        });
+      } else {
+        res = await fetch('/api/birthdays', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, month, day, year }),
+        });
+      }
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `Server returned ${res.status}`);
+      }
+
+      closeModal('modal-birthday');
+      await loadBirthdays();
+    } catch (e) {
+      alert('Error saving birthday: ' + e.message);
+    }
+
+    btn.disabled = false;
+    btn.textContent = editingBdayId ? 'Save Changes' : 'Add Birthday';
+  });
+
+  // ── Delete ──
+  function openBdayDeleteModal(b) {
+    deletingBdayId = b.id;
+    document.getElementById('delete-bday-name').textContent = b.name;
+    openModal('modal-birthday-delete');
+  }
+
+  document.getElementById('modal-bday-delete-close').addEventListener('click', () => closeModal('modal-birthday-delete'));
+  document.getElementById('btn-bday-delete-cancel').addEventListener('click', () => closeModal('modal-birthday-delete'));
+  document.getElementById('btn-bday-delete-confirm').addEventListener('click', async () => {
+    if (!deletingBdayId) return;
+    const btn = document.getElementById('btn-bday-delete-confirm');
+    btn.disabled = true;
+    btn.textContent = 'Removing…';
+
+    try {
+      const res = await fetch(`/api/birthdays/${deletingBdayId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      closeModal('modal-birthday-delete');
+      await loadBirthdays();
+    } catch (e) {
+      alert('Error removing birthday: ' + e.message);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Remove';
+    deletingBdayId = null;
+  });
 
   // ═══════════════════════════════════════
   //  WEATHER — fully wired to backend
