@@ -1,5 +1,5 @@
 {
-  "name": "digitalcalendar",
+  "name": "familydash",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -7,10 +7,10 @@
     "worker": "node worker.js",
     "dev": "node worker.js & node server.js"
   },
-  "keywords": [],
+  "keywords": ["family", "calendar", "dashboard", "weather", "birthdays", "reminders"],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "FamilyDash - A family dashboard with calendar, weather, birthdays, and reminders",
   "dependencies": {
     "better-sqlite3": "^12.6.2",
     "express": "^5.2.1",

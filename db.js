@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'calendar.db');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'familydash.db');
 
 let _db;
 

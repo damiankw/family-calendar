@@ -249,7 +249,7 @@ app.get('/api/reminders', (_req, res) => {
   res.json(db.getAllReminders());
 });
 
-// GET /api/reminders/enabled — only enabled reminders (for wallboard)
+// GET /api/reminders/enabled — only enabled reminders (for dashboard)
 app.get('/api/reminders/enabled', (_req, res) => {
   res.json(db.getEnabledReminders());
 });
@@ -308,7 +308,7 @@ app.get('/api/geocode', async (req, res) => {
 // GET /api/backup — export all data as JSON
 app.get('/api/backup', (_req, res) => {
   const payload = db.exportAllData();
-  res.setHeader('Content-Disposition', 'attachment; filename="wallboard-backup.json"');
+  res.setHeader('Content-Disposition', 'attachment; filename="familydash-backup.json"');
   res.json(payload);
 });
 
@@ -337,7 +337,7 @@ app.get('/setup', (_req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(PORT, () => {
-  console.log(`Calendar wallboard running at http://localhost:${PORT}`);
+  console.log(`FamilyDash running at http://localhost:${PORT}`);
 
   // ───────── Embedded worker loop ─────────
   // Runs the same fetch cycle that worker.js did, but inside the server

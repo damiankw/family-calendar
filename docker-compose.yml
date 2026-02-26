@@ -1,12 +1,12 @@
 version: "3.8"
 
 services:
-  calendar:
+  familydash:
     build: .
     ports:
       - "3000:3000"
     environment:
-      DB_PATH: /data/calendar.db
+      DB_PATH: /data/familydash.db
     volumes:
       - ./data:/data
     restart: unless-stopped
