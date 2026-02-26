@@ -127,9 +127,9 @@
             <input type="checkbox" ${cal.enabled ? 'checked' : ''}>
             <span class="toggle-slider"></span>
           </label>
-          <button class="btn-icon-only btn-sync" title="Sync now"><span>🔄</span></button>
-          <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
-          <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+          <button class="btn-icon-only btn-sync" title="Sync now"><i class="fa-solid fa-arrows-rotate"></i></button>
+          <button class="btn-icon-only btn-edit" title="Edit"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-icon-only btn-delete" title="Remove"><i class="fa-solid fa-trash"></i></button>
         </div>
       `;
 
@@ -168,7 +168,7 @@
           const origText = badge.textContent;
           const origClass = badge.className;
           badge.className = 'badge badge-connected';
-          badge.textContent = `✓ ${data.events} events`;
+          badge.innerHTML = `<i class="fa-solid fa-check"></i> ${data.events} events`;
           setTimeout(() => {
             badge.className = origClass;
             badge.textContent = origText;
@@ -178,7 +178,7 @@
           const origText = badge.textContent;
           const origClass = badge.className;
           badge.className = 'badge badge-error';
-          badge.textContent = '✕ Sync failed';
+          badge.innerHTML = '<i class="fa-solid fa-xmark"></i> Sync failed';
           setTimeout(() => {
             badge.className = origClass;
             badge.textContent = origText;
@@ -203,13 +203,25 @@
     }
   }
 
+  function timeAgo(isoStr) {
+    if (!isoStr) return 'Never synced';
+    const then = new Date(isoStr + 'Z');           // SQLite datetimes are UTC
+    const diff = Math.floor((Date.now() - then) / 1000);
+    if (diff < 5)     return 'Just now';
+    if (diff < 60)    return `${diff}s ago`;
+    if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  }
+
   function buildSubtitle(cal) {
     const typeLabel = TYPE_LABELS[cal.type] || cal.type;
+    const synced    = timeAgo(cal.last_synced);
     if (cal.type === 'ics' && cal.config?.url) {
       const url = cal.config.url.length > 45 ? cal.config.url.slice(0, 42) + '…' : cal.config.url;
-      return `${typeLabel} · ${url}`;
+      return `${typeLabel} · ${url} · ${synced}`;
     }
-    return typeLabel;
+    return `${typeLabel} · ${synced}`;
   }
 
   function esc(str) {
@@ -252,12 +264,12 @@
   // ── Auth buttons (placeholder — OAuth not yet implemented) ──
   document.getElementById('btn-google-auth').addEventListener('click', () => {
     document.getElementById('google-auth-status').innerHTML =
-      '<span style="color:#ffb86c">⚠ Google OAuth integration coming soon. Use ICS URL for now.</span>';
+      '<span style="color:#ffb86c"><i class="fa-solid fa-triangle-exclamation"></i> Google OAuth integration coming soon. Use ICS URL for now.</span>';
   });
 
   document.getElementById('btn-ms-auth').addEventListener('click', () => {
     document.getElementById('ms-auth-status').innerHTML =
-      '<span style="color:#ffb86c">⚠ Microsoft OAuth integration coming soon. Use ICS URL for now.</span>';
+      '<span style="color:#ffb86c"><i class="fa-solid fa-triangle-exclamation"></i> Microsoft OAuth integration coming soon. Use ICS URL for now.</span>';
   });
 
   // ── Open Add modal ──
@@ -471,15 +483,15 @@
 
       card.innerHTML = `
         <div class="card-left">
-          <span class="bday-icon">🎂</span>
+          <span class="bday-icon"><i class="fa-solid fa-cake-candles"></i></span>
           <div class="card-info">
             <span class="card-title">${esc(b.name)}</span>
             <span class="card-subtitle">${dateStr}${ageStr ? ' · ' + ageStr : ''}</span>
           </div>
         </div>
         <div class="card-right">
-          <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
-          <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+          <button class="btn-icon-only btn-edit" title="Edit"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-icon-only btn-delete" title="Remove"><i class="fa-solid fa-trash"></i></button>
         </div>
       `;
 
@@ -669,8 +681,8 @@
             <input type="checkbox" ${r.enabled ? 'checked' : ''}>
             <span class="toggle-track"></span>
           </label>
-          <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
-          <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+          <button class="btn-icon-only btn-edit" title="Edit"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-icon-only btn-delete" title="Remove"><i class="fa-solid fa-trash"></i></button>
         </div>
       `;
 
@@ -1065,7 +1077,7 @@
 
     // Basic validation
     if (!lat || !lon || isNaN(parseFloat(lat)) || isNaN(parseFloat(lon))) {
-      status.textContent = '⚠ Enter valid coordinates';
+      status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Enter valid coordinates';
       status.style.color = '#ff5555';
       setTimeout(() => { status.textContent = ''; }, 3000);
       return;
@@ -1095,13 +1107,13 @@
       displayCoords.textContent = `${lat}, ${lon}`;
       if (displayName.textContent === '—') displayName.textContent = locName;
 
-      btn.textContent = '✓ Saved';
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved';
       btn.style.background = '#50fa7b';
       btn.style.color = '#000';
       status.textContent = 'Weather will update on the next worker cycle (~5 min).';
       status.style.color = '#8b8b8b';
     } catch (e) {
-      btn.textContent = '✕ Error';
+      btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
       btn.style.background = '#ff5555';
       btn.style.color = '#fff';
       status.textContent = e.message;

@@ -77,6 +77,9 @@ async function syncIcsCalendar(src, config, sourceKey) {
     }
   }
 
+  // Mark last_synced timestamp
+  db.markCalendarSynced(src.id);
+
   return count;
 }
 

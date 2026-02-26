@@ -65,6 +65,7 @@ function initialise(db) {
       color         TEXT    DEFAULT '#8be9fd',
       enabled       INTEGER DEFAULT 1,         -- 0 = disabled, 1 = enabled
       config        TEXT    DEFAULT '{}',      -- JSON: ics_url, refresh_minutes, etc.
+      last_synced   TEXT,                      -- datetime of last successful sync
       created_at    TEXT    DEFAULT (datetime('now')),
       updated_at    TEXT    DEFAULT (datetime('now'))
     );
@@ -107,6 +108,9 @@ function initialise(db) {
   seedSetting.run('weather_location_name', 'Melbourne, Australia');
   seedSetting.run('weather_temp_unit', 'celsius');       // celsius | fahrenheit
   seedSetting.run('weather_wind_unit', 'kmh');           // ms | kmh | mph
+
+  // ── Migrations for existing databases ──
+  try { db.exec('ALTER TABLE calendar_sources ADD COLUMN last_synced TEXT'); } catch (_) { /* column already exists */ }
 }
 
 // ───────── Event helpers ─────────
@@ -241,6 +245,11 @@ function updateCalendarSource(id, { name, type, color, enabled, config }) {
   if (color != null) {
     db.prepare('UPDATE events SET color = ? WHERE source = ?').run(color, `cal-${id}`);
   }
+}
+
+function markCalendarSynced(id) {
+  const db = getDb();
+  db.prepare("UPDATE calendar_sources SET last_synced = datetime('now') WHERE id = ?").run(id);
 }
 
 function deleteCalendarSource(id) {
@@ -380,6 +389,7 @@ module.exports = {
   getCalendarSource,
   createCalendarSource,
   updateCalendarSource,
+  markCalendarSynced,
   deleteCalendarSource,
   getSetting,
   setSetting,
