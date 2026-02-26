@@ -1,0 +1,390 @@
+/* ===== Reset & Base ===== */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  background: #0a0a0a;
+  color: #e8e8e8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Layout ===== */
+.wallboard {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ---------- LEFT PANEL ---------- */
+.left-panel {
+  flex: 0 0 33.333%;
+  display: flex;
+  flex-direction: column;
+  padding: 2.5vh 2vw;
+  gap: 2.5vh;
+  background: linear-gradient(165deg, #141420 0%, #0d0d14 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+/* Clock */
+.clock-section {
+  text-align: center;
+  padding: 1vh 0 0.5vh;
+}
+
+.time {
+  font-size: 7vw;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #ffffff;
+}
+
+#clock-ampm {
+  font-size: 2.2vw;
+  font-weight: 400;
+  vertical-align: super;
+  margin-left: 0.3vw;
+  opacity: 0.7;
+}
+
+.date {
+  font-size: 1.4vw;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 0.5vh;
+}
+
+/* Current Weather */
+.current-weather {
+  text-align: center;
+  padding: 1.5vh 0;
+}
+
+.weather-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1vw;
+}
+
+.temp {
+  font-size: 5vw;
+  font-weight: 300;
+  color: #ffffff;
+}
+
+.weather-icon {
+  font-size: 3.5vw;
+}
+
+.weather-details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8vw 1.5vw;
+  margin-top: 1.2vh;
+  font-size: 0.9vw;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  gap: 0.3vw;
+}
+
+.detail-icon {
+  font-size: 1vw;
+}
+
+/* Forecast */
+.forecast {
+  display: flex;
+  justify-content: center;
+  gap: 1.2vw;
+}
+
+.forecast-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5vh;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.8vw;
+  padding: 1vh 0.9vw;
+  min-width: 5vw;
+}
+
+.forecast-label {
+  font-size: 0.75vw;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.forecast-icon {
+  font-size: 1.8vw;
+}
+
+.forecast-temps {
+  font-size: 0.85vw;
+  font-weight: 500;
+}
+
+.forecast-temps .hi {
+  color: #ffb86c;
+}
+
+.forecast-temps .lo {
+  color: #8be9fd;
+  margin-left: 0.3vw;
+}
+
+/* Events */
+.events {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+  overflow-y: auto;
+  padding-right: 0.3vw;
+}
+
+/* Thin scrollbar */
+.events::-webkit-scrollbar {
+  width: 4px;
+}
+.events::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+}
+
+.events-heading {
+  font-size: 1vw;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.4);
+  padding-bottom: 0.6vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 0.5vh;
+}
+
+.events-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+}
+
+.event {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+  padding: 0.7vh 0.6vw;
+  border-radius: 0.5vw;
+  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.2s;
+}
+
+.event:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.event-time {
+  font-size: 0.8vw;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  min-width: 4.5vw;
+  text-align: right;
+}
+
+.event-dot {
+  width: 0.5vw;
+  height: 0.5vw;
+  min-width: 6px;
+  min-height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.event-title {
+  font-size: 0.95vw;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---------- RIGHT PANEL ---------- */
+.right-panel {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 2vh 1.5vw;
+  background: #0a0a0a;
+  overflow: hidden;
+}
+
+.calendar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header {
+  text-align: center;
+  padding-bottom: 1vh;
+  flex-shrink: 0;
+}
+
+.calendar-month {
+  font-size: 2.2vw;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.04em;
+}
+
+/* Calendar grid */
+.calendar-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: auto repeat(5, 1fr); /* header row + up to 5 week rows */
+  gap: 0.3vw;
+}
+
+.dow {
+  text-align: center;
+  font-size: 1.1vw;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  padding-bottom: 1vh;
+  letter-spacing: 0.05em;
+}
+
+/* Individual day cell — vertical layout */
+.day-cell {
+  display: flex;
+  flex-direction: column;
+  padding: 0.4vh 0.3vw;
+  border-radius: 0.4vw;
+  background: transparent;
+  border: none;
+  overflow: hidden;
+  cursor: default;
+  transition: background 0.2s;
+  min-height: 0;
+}
+
+.day-cell:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.day-cell.empty {
+  background: transparent;
+}
+
+.day-cell.other-month {
+  opacity: 0.25;
+}
+
+.day-cell.today {
+  background: rgba(224, 36, 94, 0.08);
+  border-radius: 0.4vw;
+}
+
+/* Day number */
+.day-number {
+  font-size: 1vw;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1;
+  margin-bottom: 0.3vh;
+  flex-shrink: 0;
+}
+
+.day-cell.today .day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0245e;
+  color: #fff;
+  font-weight: 700;
+  width: 1.6vw;
+  height: 1.6vw;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 50%;
+  font-size: 0.85vw;
+}
+
+.day-cell.other-month .day-number {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Event items inside day cells */
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.cal-event {
+  display: flex;
+  align-items: center;
+  gap: 0.2vw;
+  padding: 0.15vh 0.25vw;
+  border-radius: 0.2vw;
+  background: rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.cal-event-dot {
+  width: 0.35vw;
+  height: 0.35vw;
+  min-width: 5px;
+  min-height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cal-event-text {
+  font-size: 0.6vw;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-event-more {
+  font-size: 0.55vw;
+  color: rgba(255, 255, 255, 0.35);
+  padding-left: 0.25vw;
+  flex-shrink: 0;
+}
+
+/* Month separator row label */
+.month-label {
+  grid-column: 1 / -1;
+  font-size: 1.4vw;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0.4vh 0 0.2vh 0.3vw;
+  letter-spacing: 0.03em;
+}

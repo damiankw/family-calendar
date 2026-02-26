@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Calendar Wallboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="wallboard">
+
+    <!-- LEFT PANEL (1/3) -->
+    <aside class="left-panel">
+
+      <!-- Clock & Date -->
+      <section class="clock-section">
+        <div class="time">
+          <span id="clock-time">1:28</span><span id="clock-ampm">PM</span>
+        </div>
+        <div class="date" id="clock-date">Thursday, 26 February</div>
+      </section>
+
+      <!-- Current Weather -->
+      <section class="current-weather">
+        <div class="weather-main">
+          <span class="temp" id="current-temp">23°</span>
+          <span class="weather-icon" id="current-icon">⛅</span>
+        </div>
+        <div class="weather-details">
+          <span class="detail"><span class="detail-icon">💨</span> <span id="wind-speed">3 m/s SE</span></span>
+          <span class="detail"><span class="detail-icon">💧</span> <span id="humidity">62%</span></span>
+          <span class="detail"><span class="detail-icon">🌅</span> <span id="sunrise">6:12 AM</span></span>
+          <span class="detail"><span class="detail-icon">🌇</span> <span id="sunset">7:48 PM</span></span>
+        </div>
+      </section>
+
+      <!-- Forecast -->
+      <section class="forecast">
+        <div class="forecast-day" id="forecast-0">
+          <span class="forecast-label">TODAY</span>
+          <span class="forecast-icon">⛅</span>
+          <span class="forecast-temps"><span class="hi">24</span> <span class="lo">15</span></span>
+        </div>
+        <div class="forecast-day" id="forecast-1">
+          <span class="forecast-label">FRI</span>
+          <span class="forecast-icon">🌧️</span>
+          <span class="forecast-temps"><span class="hi">27</span> <span class="lo">17</span></span>
+        </div>
+        <div class="forecast-day" id="forecast-2">
+          <span class="forecast-label">SAT</span>
+          <span class="forecast-icon">⛈️</span>
+          <span class="forecast-temps"><span class="hi">28</span> <span class="lo">19</span></span>
+        </div>
+        <div class="forecast-day" id="forecast-3">
+          <span class="forecast-label">SUN</span>
+          <span class="forecast-icon">🌥️</span>
+          <span class="forecast-temps"><span class="hi">22</span> <span class="lo">20</span></span>
+        </div>
+      </section>
+
+      <!-- Today / Tomorrow Events -->
+      <section class="events">
+        <div class="events-group">
+          <h3 class="events-heading">Today</h3>
+          <ul class="events-list" id="events-today">
+            <li class="event">
+              <span class="event-time">8:30 AM</span>
+              <span class="event-dot" style="background:#ff5555"></span>
+              <span class="event-title">School drop-off</span>
+            </li>
+            <li class="event">
+              <span class="event-time">10:00 AM</span>
+              <span class="event-dot" style="background:#50fa7b"></span>
+              <span class="event-title">Dentist — Mum</span>
+            </li>
+            <li class="event">
+              <span class="event-time">3:30 PM</span>
+              <span class="event-dot" style="background:#ff5555"></span>
+              <span class="event-title">School pick-up</span>
+            </li>
+            <li class="event">
+              <span class="event-time">6:00 PM</span>
+              <span class="event-dot" style="background:#8be9fd"></span>
+              <span class="event-title">Soccer practice — Liam</span>
+            </li>
+          </ul>
+        </div>
+        <div class="events-group">
+          <h3 class="events-heading">Tomorrow</h3>
+          <ul class="events-list" id="events-tomorrow">
+            <li class="event">
+              <span class="event-time">9:00 AM</span>
+              <span class="event-dot" style="background:#ffb86c"></span>
+              <span class="event-title">Grocery shop</span>
+            </li>
+            <li class="event">
+              <span class="event-time">2:00 PM</span>
+              <span class="event-dot" style="background:#bd93f9"></span>
+              <span class="event-title">Play date — Emma</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- RIGHT PANEL (2/3) — Calendar -->
+    <main class="right-panel">
+      <div class="calendar">
+        <div class="calendar-header">
+          <span class="calendar-month" id="calendar-month">February 2026</span>
+        </div>
+        <div class="calendar-grid">
+          <!-- Day-of-week headers -->
+          <div class="dow">S</div>
+          <div class="dow">M</div>
+          <div class="dow">T</div>
+          <div class="dow">W</div>
+          <div class="dow">T</div>
+          <div class="dow">F</div>
+          <div class="dow">S</div>
+          <!-- Day cells injected by JS -->
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
