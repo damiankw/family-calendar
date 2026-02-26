@@ -63,6 +63,13 @@ function initialise(db) {
       value         TEXT
     );
   `);
+
+  // Seed default settings (INSERT OR IGNORE so user changes are preserved)
+  const seedSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
+  seedSetting.run('weather_lat', '-37.8136');          // Melbourne, Australia
+  seedSetting.run('weather_lon', '144.9631');
+  seedSetting.run('weather_tz',  'Australia/Melbourne');
+  seedSetting.run('weather_location_name', 'Melbourne, Australia');
 }
 
 // ───────── Event helpers ─────────

@@ -41,6 +41,11 @@ app.get('/api/weather/forecast', (_req, res) => {
   res.json(db.getForecast());
 });
 
+// ───────── Admin panel ─────────
+app.get('/admin', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // ───────── Static files ─────────
 app.use(express.static(path.join(__dirname, 'public')));
 

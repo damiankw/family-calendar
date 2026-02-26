@@ -51,36 +51,114 @@ async function fetchCalendarEvents() {
   console.log(`[worker]   → ${stubEvents.length} events written`);
 }
 
-// ───────── Weather provider ─────────
-// TODO: Wire up to OpenWeatherMap, Bureau of Meteorology, etc.
+// ───────── Weather provider (Open-Meteo — free, no API key) ─────────
+
+// WMO weather codes → emoji mapping
+const WMO_ICONS = {
+  0:  '☀️',   // Clear sky
+  1:  '🌤️',  // Mainly clear
+  2:  '⛅',   // Partly cloudy
+  3:  '☁️',   // Overcast
+  45: '🌫️',  // Fog
+  48: '🌫️',  // Depositing rime fog
+  51: '🌦️',  // Light drizzle
+  53: '🌦️',  // Moderate drizzle
+  55: '🌧️',  // Dense drizzle
+  56: '🌧️',  // Light freezing drizzle
+  57: '🌧️',  // Dense freezing drizzle
+  61: '🌧️',  // Slight rain
+  63: '🌧️',  // Moderate rain
+  65: '🌧️',  // Heavy rain
+  66: '🌧️',  // Light freezing rain
+  67: '🌧️',  // Heavy freezing rain
+  71: '🌨️',  // Slight snowfall
+  73: '🌨️',  // Moderate snowfall
+  75: '❄️',   // Heavy snowfall
+  77: '🌨️',  // Snow grains
+  80: '🌦️',  // Slight rain showers
+  81: '🌧️',  // Moderate rain showers
+  82: '🌧️',  // Violent rain showers
+  85: '🌨️',  // Slight snow showers
+  86: '🌨️',  // Heavy snow showers
+  95: '⛈️',  // Thunderstorm
+  96: '⛈️',  // Thunderstorm with slight hail
+  99: '⛈️',  // Thunderstorm with heavy hail
+};
+
+function wmoIcon(code) {
+  return WMO_ICONS[code] ?? '❓';
+}
+
+// Convert degrees to compass direction
+function degToCompass(deg) {
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+
+// Format unix timestamp to "h:mm AM/PM" in timezone
+function formatTime(isoString) {
+  const d = new Date(isoString);
+  let hours = d.getHours();
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `${hours}:${mins} ${ampm}`;
+}
+
 async function fetchWeather() {
   console.log('[worker] Fetching weather …');
 
-  // ── STUB: hardcoded current conditions ──
+  // Read location from settings (default: Melbourne, Australia)
+  const lat = db.getSetting('weather_lat') || '-37.8136';
+  const lon = db.getSetting('weather_lon') || '144.9631';
+  const tz  = db.getSetting('weather_tz')  || 'Australia/Melbourne';
+
+  // ── Current weather + daily forecast in one call ──
+  const url = `https://api.open-meteo.com/v1/forecast`
+    + `?latitude=${lat}&longitude=${lon}`
+    + `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset`
+    + `&timezone=${encodeURIComponent(tz)}`
+    + `&forecast_days=5`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Open-Meteo returned ${res.status}`);
+  const data = await res.json();
+
+  // ── Current conditions ──
+  const cur = data.current;
+  const daily = data.daily;
+
   db.upsertCurrentWeather({
-    temp: 23,
-    icon: '⛅',
-    description: 'Partly cloudy',
-    wind_speed: 3,
-    wind_dir: 'SE',
-    humidity: 62,
-    sunrise: '6:12 AM',
-    sunset: '7:48 PM',
+    temp:        Math.round(cur.temperature_2m),
+    icon:        wmoIcon(cur.weather_code),
+    description: '', // Open-Meteo doesn't return a text description
+    wind_speed:  Math.round(cur.wind_speed_10m),
+    wind_dir:    degToCompass(cur.wind_direction_10m),
+    humidity:    cur.relative_humidity_2m,
+    sunrise:     formatTime(daily.sunrise[0]),
+    sunset:      formatTime(daily.sunset[0]),
   });
 
-  // ── STUB: hardcoded multi-day forecast ──
-  const forecasts = [
-    { date: '2026-02-26', day_label: 'TODAY', icon: '⛅',  hi: 24, lo: 15 },
-    { date: '2026-02-27', day_label: 'FRI',   icon: '🌧️', hi: 27, lo: 17 },
-    { date: '2026-02-28', day_label: 'SAT',   icon: '⛈️', hi: 28, lo: 19 },
-    { date: '2026-03-01', day_label: 'SUN',   icon: '🌥️', hi: 22, lo: 20 },
-  ];
+  // ── 5-day forecast ──
+  const dayLabels = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const today = new Date().toISOString().slice(0, 10);
 
-  for (const f of forecasts) {
-    db.upsertForecastDay(f);
+  for (let i = 0; i < daily.time.length; i++) {
+    const date = daily.time[i];
+    const d    = new Date(date + 'T00:00:00');
+    const label = date === today ? 'TODAY' : dayLabels[d.getDay()];
+
+    db.upsertForecastDay({
+      date,
+      day_label: label,
+      icon:      wmoIcon(daily.weather_code[i]),
+      hi:        Math.round(daily.temperature_2m_max[i]),
+      lo:        Math.round(daily.temperature_2m_min[i]),
+    });
   }
 
-  console.log('[worker]   → weather + forecast written');
+  console.log(`[worker]   → current weather + ${daily.time.length}-day forecast written`);
 }
 
 // ───────── Add future providers here ─────────

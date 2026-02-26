@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar Wallboard — Settings</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="admin-layout">
+
+    <!-- ───────── Sidebar ───────── -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon">📅</span>
+        <span class="brand-text">Wallboard</span>
+      </div>
+      <ul class="nav-list">
+        <li class="nav-item active" data-section="calendars">
+          <span class="nav-icon">📆</span> Calendars
+        </li>
+        <li class="nav-item" data-section="weather">
+          <span class="nav-icon">🌤️</span> Weather
+        </li>
+        <li class="nav-item" data-section="todos">
+          <span class="nav-icon">✅</span> Todo Lists
+        </li>
+        <li class="nav-item" data-section="birthdays">
+          <span class="nav-icon">🎂</span> Birthdays
+        </li>
+        <li class="nav-item" data-section="reminders">
+          <span class="nav-icon">🔁</span> Reminders
+        </li>
+        <li class="nav-item" data-section="workplaces">
+          <span class="nav-icon">🚗</span> Workplaces
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <a href="/" class="back-link">← Back to wallboard</a>
+      </div>
+    </nav>
+
+    <!-- ───────── Main content ───────── -->
+    <main class="content">
+
+      <!-- ═══════ CALENDARS ═══════ -->
+      <section class="settings-section active" id="section-calendars">
+        <div class="section-header">
+          <div>
+            <h1>Calendars</h1>
+            <p class="section-desc">Connect and manage your calendar sources. Events from all enabled calendars appear on the wallboard.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-add-calendar">
+            <span class="btn-icon">+</span> Add Calendar
+          </button>
+        </div>
+
+        <!-- Calendar list -->
+        <div class="card-list" id="calendar-list">
+
+          <!-- Example: Google Calendar -->
+          <div class="card" data-id="cal-1">
+            <div class="card-left">
+              <span class="cal-color-dot" style="background: #4285F4"></span>
+              <div class="card-info">
+                <span class="card-title">Family (Google)</span>
+                <span class="card-subtitle">Google Calendar · damian@gmail.com</span>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="badge badge-connected">Connected</span>
+              <label class="toggle">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
+              <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+            </div>
+          </div>
+
+          <!-- Example: Microsoft Exchange -->
+          <div class="card" data-id="cal-2">
+            <div class="card-left">
+              <span class="cal-color-dot" style="background: #ff5555"></span>
+              <div class="card-info">
+                <span class="card-title">Work (Exchange)</span>
+                <span class="card-subtitle">Microsoft 365 · damian@company.com</span>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="badge badge-connected">Connected</span>
+              <label class="toggle">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
+              <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+            </div>
+          </div>
+
+          <!-- Example: ICS URL -->
+          <div class="card" data-id="cal-3">
+            <div class="card-left">
+              <span class="cal-color-dot" style="background: #50fa7b"></span>
+              <div class="card-info">
+                <span class="card-title">School Calendar</span>
+                <span class="card-subtitle">ICS URL · https://school.example.com/cal.ics</span>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="badge badge-connected">Connected</span>
+              <label class="toggle">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
+              <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+            </div>
+          </div>
+
+          <!-- Example: Disabled calendar -->
+          <div class="card card-disabled" data-id="cal-4">
+            <div class="card-left">
+              <span class="cal-color-dot" style="background: #bd93f9"></span>
+              <div class="card-info">
+                <span class="card-title">Kids' Sports</span>
+                <span class="card-subtitle">ICS URL · https://sports.example.com/fixtures.ics</span>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="badge badge-disabled">Disabled</span>
+              <label class="toggle">
+                <input type="checkbox">
+                <span class="toggle-slider"></span>
+              </label>
+              <button class="btn-icon-only btn-edit" title="Edit"><span>✏️</span></button>
+              <button class="btn-icon-only btn-delete" title="Remove"><span>🗑️</span></button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══════ ADD / EDIT CALENDAR MODAL ═══════ -->
+      <div class="modal-overlay" id="modal-calendar">
+        <div class="modal">
+          <div class="modal-header">
+            <h2 id="modal-calendar-title">Add Calendar</h2>
+            <button class="btn-icon-only modal-close" id="modal-calendar-close"><span>✕</span></button>
+          </div>
+          <div class="modal-body">
+
+            <!-- Step 1: Choose type -->
+            <div class="form-group">
+              <label class="form-label">Calendar Type</label>
+              <div class="type-picker" id="cal-type-picker">
+                <button class="type-option selected" data-type="google">
+                  <span class="type-icon">🔵</span>
+                  <span class="type-name">Google</span>
+                  <span class="type-desc">Gmail / Google Workspace</span>
+                </button>
+                <button class="type-option" data-type="microsoft">
+                  <span class="type-icon">🟦</span>
+                  <span class="type-name">Microsoft</span>
+                  <span class="type-desc">Outlook / Exchange / 365</span>
+                </button>
+                <button class="type-option" data-type="ics">
+                  <span class="type-icon">🔗</span>
+                  <span class="type-name">ICS URL</span>
+                  <span class="type-desc">Any .ics calendar link</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Display name -->
+            <div class="form-group">
+              <label class="form-label" for="cal-name">Display Name</label>
+              <input type="text" class="form-input" id="cal-name" placeholder="e.g. Family, Work, School…">
+            </div>
+
+            <!-- Colour picker -->
+            <div class="form-group">
+              <label class="form-label">Colour</label>
+              <div class="color-picker" id="cal-color-picker">
+                <button class="color-swatch selected" data-color="#4285F4" style="background:#4285F4"></button>
+                <button class="color-swatch" data-color="#ff5555" style="background:#ff5555"></button>
+                <button class="color-swatch" data-color="#50fa7b" style="background:#50fa7b"></button>
+                <button class="color-swatch" data-color="#ffb86c" style="background:#ffb86c"></button>
+                <button class="color-swatch" data-color="#bd93f9" style="background:#bd93f9"></button>
+                <button class="color-swatch" data-color="#ff79c6" style="background:#ff79c6"></button>
+                <button class="color-swatch" data-color="#8be9fd" style="background:#8be9fd"></button>
+                <button class="color-swatch" data-color="#f1fa8c" style="background:#f1fa8c"></button>
+                <button class="color-swatch" data-color="#6272a4" style="background:#6272a4"></button>
+                <button class="color-swatch" data-color="#ffffff" style="background:#ffffff"></button>
+              </div>
+            </div>
+
+            <!-- Google-specific fields -->
+            <div class="type-fields" id="fields-google">
+              <div class="auth-box">
+                <p class="auth-text">Sign in with your Google account to grant read-only access to your calendar.</p>
+                <button class="btn btn-google" id="btn-google-auth">
+                  <span class="btn-icon">G</span> Sign in with Google
+                </button>
+                <div class="auth-status" id="google-auth-status">
+                  <!-- Shows after auth: ✓ Connected as damian@gmail.com -->
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="google-calendar-select">Calendar</label>
+                <select class="form-select" id="google-calendar-select" disabled>
+                  <option value="">Sign in to load calendars…</option>
+                </select>
+                <span class="form-hint">After signing in, choose which calendar to sync.</span>
+              </div>
+            </div>
+
+            <!-- Microsoft-specific fields -->
+            <div class="type-fields hidden" id="fields-microsoft">
+              <div class="auth-box">
+                <p class="auth-text">Sign in with your Microsoft account to grant read-only access to your Exchange/Outlook calendar.</p>
+                <button class="btn btn-microsoft" id="btn-ms-auth">
+                  <span class="btn-icon">⊞</span> Sign in with Microsoft
+                </button>
+                <div class="auth-status" id="ms-auth-status">
+                  <!-- Shows after auth: ✓ Connected as damian@company.com -->
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ms-calendar-select">Calendar</label>
+                <select class="form-select" id="ms-calendar-select" disabled>
+                  <option value="">Sign in to load calendars…</option>
+                </select>
+                <span class="form-hint">After signing in, choose which calendar to sync.</span>
+              </div>
+            </div>
+
+            <!-- ICS-specific fields -->
+            <div class="type-fields hidden" id="fields-ics">
+              <div class="form-group">
+                <label class="form-label" for="ics-url">ICS URL</label>
+                <input type="url" class="form-input" id="ics-url" placeholder="https://example.com/calendar.ics">
+                <span class="form-hint">The full URL to a public or private .ics calendar feed.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ics-refresh">Refresh Interval</label>
+                <select class="form-select" id="ics-refresh">
+                  <option value="5">Every 5 minutes</option>
+                  <option value="15">Every 15 minutes</option>
+                  <option value="30" selected>Every 30 minutes</option>
+                  <option value="60">Every hour</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" id="btn-calendar-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-calendar-save">Save Calendar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ WEATHER ═══════ -->
+      <section class="settings-section" id="section-weather">
+        <div class="section-header">
+          <div>
+            <h1>Weather</h1>
+            <p class="section-desc">Configure your location for local weather and forecasts on the wallboard.</p>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="form-group">
+            <label class="form-label" for="weather-search">Search by City</label>
+            <div class="search-input-wrap">
+              <input type="text" class="form-input" id="weather-search" placeholder="Start typing a city name…" autocomplete="off">
+              <div class="search-results" id="weather-search-results">
+                <!-- Populated dynamically -->
+                <div class="search-result-item" data-lat="-37.8136" data-lon="144.9631" data-tz="Australia/Melbourne">
+                  <span class="search-result-name">Melbourne</span>
+                  <span class="search-result-region">Victoria, Australia</span>
+                </div>
+                <div class="search-result-item" data-lat="-37.5622" data-lon="143.8503" data-tz="Australia/Melbourne">
+                  <span class="search-result-name">Ballarat</span>
+                  <span class="search-result-region">Victoria, Australia</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider-text">or enter coordinates manually</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="weather-lat">Latitude</label>
+              <input type="text" class="form-input" id="weather-lat" placeholder="-37.8136">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="weather-lon">Longitude</label>
+              <input type="text" class="form-input" id="weather-lon" placeholder="144.9631">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="weather-tz">Timezone</label>
+              <select class="form-select" id="weather-tz">
+                <option value="Australia/Melbourne" selected>Australia/Melbourne</option>
+                <option value="Australia/Sydney">Australia/Sydney</option>
+                <option value="Australia/Brisbane">Australia/Brisbane</option>
+                <option value="Australia/Adelaide">Australia/Adelaide</option>
+                <option value="Australia/Perth">Australia/Perth</option>
+                <option value="Australia/Darwin">Australia/Darwin</option>
+                <option value="Australia/Hobart">Australia/Hobart</option>
+                <option value="Pacific/Auckland">Pacific/Auckland</option>
+                <option value="America/New_York">America/New_York</option>
+                <option value="America/Chicago">America/Chicago</option>
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                <option value="Europe/London">Europe/London</option>
+                <option value="Europe/Paris">Europe/Paris</option>
+                <option value="Asia/Tokyo">Asia/Tokyo</option>
+                <option value="Asia/Singapore">Asia/Singapore</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Current Location</label>
+            <div class="current-value-display" id="weather-current-location">
+              <span class="current-label">📍</span>
+              <span>Melbourne, Australia</span>
+              <span class="current-coords">-37.8136, 144.9631</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Temperature Unit</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="temp-unit" value="celsius" checked>
+                <span class="radio-custom"></span>
+                Celsius (°C)
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="temp-unit" value="fahrenheit">
+                <span class="radio-custom"></span>
+                Fahrenheit (°F)
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Wind Speed Unit</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="wind-unit" value="ms" checked>
+                <span class="radio-custom"></span>
+                m/s
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="wind-unit" value="kmh">
+                <span class="radio-custom"></span>
+                km/h
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="wind-unit" value="mph">
+                <span class="radio-custom"></span>
+                mph
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" id="btn-weather-save">Save Weather Settings</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ TODO LISTS ═══════ -->
+      <section class="settings-section" id="section-todos">
+        <div class="section-header">
+          <div>
+            <h1>Todo Lists</h1>
+            <p class="section-desc">Manage todo lists that display on the wallboard. Great for shopping lists, chores, or family tasks.</p>
+          </div>
+          <button class="btn btn-primary disabled" id="btn-add-todo-list">
+            <span class="btn-icon">+</span> Add List
+          </button>
+        </div>
+
+        <div class="coming-soon-card">
+          <span class="coming-soon-icon">🚧</span>
+          <h3>Coming Soon</h3>
+          <p>Todo lists will let you create shared family task lists that show on the wallboard. Think shopping lists, weekly chores, or house projects.</p>
+          <div class="planned-features">
+            <span class="feature-tag">Multiple lists</span>
+            <span class="feature-tag">Assign to family member</span>
+            <span class="feature-tag">Due dates</span>
+            <span class="feature-tag">Recurring tasks</span>
+            <span class="feature-tag">Drag to reorder</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ BIRTHDAYS ═══════ -->
+      <section class="settings-section" id="section-birthdays">
+        <div class="section-header">
+          <div>
+            <h1>Birthdays</h1>
+            <p class="section-desc">Track family & friends' birthdays independently from calendars. Never miss one again.</p>
+          </div>
+          <button class="btn btn-primary disabled" id="btn-add-birthday">
+            <span class="btn-icon">+</span> Add Birthday
+          </button>
+        </div>
+
+        <div class="coming-soon-card">
+          <span class="coming-soon-icon">🎂</span>
+          <h3>Coming Soon</h3>
+          <p>Add birthdays for family, friends, and important people. The wallboard will show upcoming birthdays with a countdown and highlight them on the calendar.</p>
+          <div class="planned-features">
+            <span class="feature-tag">Name & date</span>
+            <span class="feature-tag">Age tracking</span>
+            <span class="feature-tag">Countdown widget</span>
+            <span class="feature-tag">Calendar overlay</span>
+            <span class="feature-tag">Notification lead time</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ REMINDERS ═══════ -->
+      <section class="settings-section" id="section-reminders">
+        <div class="section-header">
+          <div>
+            <h1>Reminders</h1>
+            <p class="section-desc">Persistent, recurring reminders for things that happen on a schedule — bin day, library day, sports day, and more.</p>
+          </div>
+          <button class="btn btn-primary disabled" id="btn-add-reminder">
+            <span class="btn-icon">+</span> Add Reminder
+          </button>
+        </div>
+
+        <div class="coming-soon-card">
+          <span class="coming-soon-icon">🔁</span>
+          <h3>Coming Soon</h3>
+          <p>Set up recurring reminders that repeat weekly, fortnightly, or monthly. Perfect for bin night, library day, sports uniform day, language day, and other rotating schedules.</p>
+          <div class="planned-features">
+            <span class="feature-tag">Weekly rotation</span>
+            <span class="feature-tag">Fortnightly rotation</span>
+            <span class="feature-tag">Monthly rotation</span>
+            <span class="feature-tag">Custom icons</span>
+            <span class="feature-tag">Day-of highlight</span>
+            <span class="feature-tag">Night-before alerts</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ WORKPLACES ═══════ -->
+      <section class="settings-section" id="section-workplaces">
+        <div class="section-header">
+          <div>
+            <h1>Workplaces</h1>
+            <p class="section-desc">Add workplace locations to show live commute times on the wallboard.</p>
+          </div>
+          <button class="btn btn-primary disabled" id="btn-add-workplace">
+            <span class="btn-icon">+</span> Add Workplace
+          </button>
+        </div>
+
+        <div class="coming-soon-card">
+          <span class="coming-soon-icon">🚗</span>
+          <h3>Coming Soon</h3>
+          <p>Add workplace addresses for each family member. The wallboard will show estimated commute times based on live traffic — so you know when to leave.</p>
+          <div class="planned-features">
+            <span class="feature-tag">Multiple workplaces</span>
+            <span class="feature-tag">Assign to person</span>
+            <span class="feature-tag">Live traffic estimates</span>
+            <span class="feature-tag">Transit / driving / cycling</span>
+            <span class="feature-tag">Morning departure alert</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ DELETE CONFIRMATION MODAL ═══════ -->
+      <div class="modal-overlay" id="modal-delete">
+        <div class="modal modal-sm">
+          <div class="modal-header">
+            <h2>Remove Calendar</h2>
+            <button class="btn-icon-only modal-close" id="modal-delete-close"><span>✕</span></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to remove <strong id="delete-cal-name">this calendar</strong>? All synced events from this source will be deleted.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" id="btn-delete-cancel">Cancel</button>
+            <button class="btn btn-danger" id="btn-delete-confirm">Remove</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
