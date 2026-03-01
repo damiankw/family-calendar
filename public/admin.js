@@ -174,7 +174,6 @@
           </div>
         </div>
         <div class="card-right">
-          <span class="badge ${cal.enabled ? 'badge-connected' : 'badge-disabled'}">${cal.enabled ? 'Enabled' : 'Disabled'}</span>
           <label class="toggle">
             <input type="checkbox" ${cal.enabled ? 'checked' : ''}>
             <span class="toggle-slider"></span>
@@ -196,10 +195,7 @@
           });
           const updated = await res.json();
           cal.enabled = updated.enabled;
-          const badge = card.querySelector('.badge');
           card.classList.toggle('card-disabled', !cal.enabled);
-          badge.className = `badge ${cal.enabled ? 'badge-connected' : 'badge-disabled'}`;
-          badge.textContent = cal.enabled ? 'Enabled' : 'Disabled';
         } catch (err) {
           console.error('Toggle failed:', err);
           e.target.checked = !enabled; // revert
@@ -527,7 +523,7 @@
 
     for (const b of birthdays) {
       const card = document.createElement('div');
-      card.className = 'card';
+      card.className = 'card' + (b.enabled ? '' : ' card-disabled');
       card.dataset.id = b.id;
 
       const dateStr = `${b.day} ${MONTH_NAMES[b.month]}`;
@@ -542,11 +538,19 @@
           </div>
         </div>
         <div class="card-right">
+          <label class="toggle" title="Enable/disable">
+            <input type="checkbox" ${b.enabled ? 'checked' : ''}>
+            <span class="toggle-slider"></span>
+          </label>
           <button class="btn-icon-only btn-edit" title="Edit"><i class="fa-solid fa-pen"></i></button>
           <button class="btn-icon-only btn-delete" title="Remove"><i class="fa-solid fa-trash"></i></button>
         </div>
       `;
 
+      card.querySelector('.toggle input').addEventListener('change', async () => {
+        await fetch(`/api/birthdays/${b.id}/toggle`, { method: 'PATCH' });
+        await loadBirthdays();
+      });
       card.querySelector('.btn-edit').addEventListener('click', () => openBdayEditModal(b));
       card.querySelector('.btn-delete').addEventListener('click', () => openBdayDeleteModal(b));
 
@@ -1004,7 +1008,49 @@
   });
 
   // ═══════════════════════════════════════
-  //  WEATHER — fully wired to backend
+  //  WEATHER — units & visibility toggles
+  // ═══════════════════════════════════════
+
+  const weatherShowTemp    = document.getElementById('weather-show-temp');
+  const weatherShowDetails = document.getElementById('weather-show-details');
+  const weatherShowForecast= document.getElementById('weather-show-forecast');
+  const weatherShowAurora  = document.getElementById('weather-show-aurora');
+
+  // ── Load saved settings on page load ──
+  async function loadWeatherSettings() {
+    try {
+      const res = await fetch('/api/settings/weather');
+      const s   = await res.json();
+
+      // Location fields (now in Settings section)
+      weatherLat.value = s.lat  || '';
+      weatherLon.value = s.lon  || '';
+      weatherTz.value  = s.tz   || '';
+
+      displayName.textContent   = s.location_name || '—';
+      displayCoords.textContent = (s.lat && s.lon) ? `${s.lat}, ${s.lon}` : '—';
+
+      // Unit radio buttons
+      const tempInput = document.querySelector(`input[name="temp-unit"][value="${s.temp_unit || 'celsius'}"]`);
+      if (tempInput) tempInput.checked = true;
+
+      const windInput = document.querySelector(`input[name="wind-unit"][value="${s.wind_unit || 'kmh'}"]`);
+      if (windInput) windInput.checked = true;
+
+      // Visibility toggles
+      if (s.show_temp != null)     weatherShowTemp.checked     = !!s.show_temp;
+      if (s.show_details != null)  weatherShowDetails.checked  = !!s.show_details;
+      if (s.show_forecast != null) weatherShowForecast.checked = !!s.show_forecast;
+      if (s.show_aurora != null)   weatherShowAurora.checked   = !!s.show_aurora;
+    } catch (e) {
+      console.warn('Failed to load weather settings:', e);
+    }
+  }
+
+  loadWeatherSettings();
+
+  // ═══════════════════════════════════════
+  //  LOCATION — in Settings section
   // ═══════════════════════════════════════
 
   const weatherSearch  = document.getElementById('weather-search');
@@ -1014,32 +1060,6 @@
   const weatherTz      = document.getElementById('weather-tz');
   const displayName    = document.getElementById('weather-display-name');
   const displayCoords  = document.getElementById('weather-display-coords');
-
-  // ── Load saved settings on page load ──
-  async function loadWeatherSettings() {
-    try {
-      const res = await fetch('/api/settings/weather');
-      const s   = await res.json();
-
-      weatherLat.value = s.lat  || '';
-      weatherLon.value = s.lon  || '';
-      weatherTz.value  = s.tz   || '';
-
-      displayName.textContent   = s.location_name || '—';
-      displayCoords.textContent = (s.lat && s.lon) ? `${s.lat}, ${s.lon}` : '—';
-
-      // Set radio buttons
-      const tempInput = document.querySelector(`input[name="temp-unit"][value="${s.temp_unit || 'celsius'}"]`);
-      if (tempInput) tempInput.checked = true;
-
-      const windInput = document.querySelector(`input[name="wind-unit"][value="${s.wind_unit || 'kmh'}"]`);
-      if (windInput) windInput.checked = true;
-    } catch (e) {
-      console.warn('Failed to load weather settings:', e);
-    }
-  }
-
-  loadWeatherSettings();
 
   // ── City search — debounced geocoding via server proxy ──
   let searchTimer = null;
@@ -1115,19 +1135,15 @@
     searchResults.classList.add('open');
   }
 
-  // ── Save weather settings ──
-  document.getElementById('btn-weather-save').addEventListener('click', async () => {
-    const btn    = document.getElementById('btn-weather-save');
-    const status = document.getElementById('weather-save-status');
-
-    const tempUnit = document.querySelector('input[name="temp-unit"]:checked')?.value || 'celsius';
-    const windUnit = document.querySelector('input[name="wind-unit"]:checked')?.value || 'kmh';
+  // ── Save location ──
+  document.getElementById('btn-location-save').addEventListener('click', async () => {
+    const btn    = document.getElementById('btn-location-save');
+    const status = document.getElementById('location-save-status');
 
     const lat = weatherLat.value.trim();
     const lon = weatherLon.value.trim();
     const tz  = weatherTz.value.trim();
 
-    // Basic validation
     if (!lat || !lon || isNaN(parseFloat(lat)) || isNaN(parseFloat(lon))) {
       status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Enter valid coordinates';
       status.style.color = '#ff5555';
@@ -1146,12 +1162,7 @@
       const res = await fetch('/api/settings/weather', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lat, lon, tz,
-          location_name: locName,
-          temp_unit: tempUnit,
-          wind_unit: windUnit,
-        }),
+        body: JSON.stringify({ lat, lon, tz, location_name: locName }),
       });
 
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
@@ -1164,6 +1175,52 @@
       btn.style.color = '#000';
       status.textContent = 'Weather will update on the next worker cycle (~5 min).';
       status.style.color = '#8b8b8b';
+    } catch (e) {
+      btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+      btn.style.background = '#ff5555';
+      btn.style.color = '#fff';
+      status.textContent = e.message;
+      status.style.color = '#ff5555';
+    }
+
+    setTimeout(() => {
+      btn.textContent = 'Save Location';
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.disabled = false;
+    }, 2000);
+  });
+
+  // ── Save weather settings (units + visibility) ──
+  document.getElementById('btn-weather-save').addEventListener('click', async () => {
+    const btn    = document.getElementById('btn-weather-save');
+    const status = document.getElementById('weather-save-status');
+
+    const tempUnit = document.querySelector('input[name="temp-unit"]:checked')?.value || 'celsius';
+    const windUnit = document.querySelector('input[name="wind-unit"]:checked')?.value || 'kmh';
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch('/api/settings/weather', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          temp_unit: tempUnit,
+          wind_unit: windUnit,
+          show_temp: weatherShowTemp.checked,
+          show_details: weatherShowDetails.checked,
+          show_forecast: weatherShowForecast.checked,
+          show_aurora: weatherShowAurora.checked,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved';
+      btn.style.background = '#50fa7b';
+      btn.style.color = '#000';
     } catch (e) {
       btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
       btn.style.background = '#ff5555';

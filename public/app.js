@@ -39,9 +39,36 @@
   // Raw reminder objects from the API
   let remindersRaw = [];
 
+  // Aurora forecast keyed by "YYYY-MM-DD" → { max_kp, visibility }
+  let auroraMap = {};
+  let auroraHemisphere = 'borealis';
+  let auroraTodayVisibility = 'unlikely';
+
   // Unit settings (fetched from API)
-  let tempSymbol = '°';
-  let windLabel  = 'km/h';
+  let tempUnit   = 'celsius';   // 'celsius' | 'fahrenheit'
+  let windUnit   = 'kmh';       // 'kmh' | 'mph' | 'ms'
+  let showTemp     = true;
+  let showDetails  = true;
+  let showForecast = true;
+  let showAurora   = true;
+
+  // ── Unit-conversion helpers (stored data is always metric) ──
+  function convertTemp(c) {
+    if (tempUnit === 'fahrenheit') return Math.round(c * 9 / 5 + 32);
+    return Math.round(c);
+  }
+  function tempSymbol() {
+    return tempUnit === 'fahrenheit' ? '°F' : '°C';
+  }
+  function convertWind(kmh) {
+    if (windUnit === 'mph') return Math.round(kmh * 0.621371);
+    if (windUnit === 'ms')  return Math.round(kmh / 3.6);
+    return Math.round(kmh);
+  }
+  function windLabel() {
+    const map = { ms: 'm/s', kmh: 'km/h', mph: 'mph' };
+    return map[windUnit] || 'km/h';
+  }
 
   // ───────── Fetch helpers ─────────
 
@@ -49,9 +76,12 @@
     try {
       const res = await fetch('/api/settings/weather');
       const s   = await res.json();
-      tempSymbol = s.temp_unit === 'fahrenheit' ? '°F' : '°C';
-      const windMap = { ms: 'm/s', kmh: 'km/h', mph: 'mph' };
-      windLabel = windMap[s.wind_unit] || 'km/h';
+      tempUnit   = s.temp_unit || 'celsius';
+      windUnit   = s.wind_unit || 'kmh';
+      showTemp     = s.show_temp !== false;
+      showDetails  = s.show_details !== false;
+      showForecast = s.show_forecast !== false;
+      showAurora   = s.show_aurora !== false;
     } catch (e) {
       console.warn('Failed to fetch weather settings:', e);
     }
@@ -59,7 +89,7 @@
 
   async function fetchBirthdays() {
     try {
-      const res  = await fetch('/api/birthdays');
+      const res  = await fetch('/api/birthdays/enabled');
       const rows = await res.json();
       birthdaysMap = {};
       for (const b of rows) {
@@ -78,6 +108,46 @@
       remindersRaw = await res.json();
     } catch (e) {
       console.warn('Failed to fetch reminders:', e);
+    }
+  }
+
+  async function fetchAurora() {
+    try {
+      const res  = await fetch('/api/weather/aurora');
+      const data = await res.json();
+      auroraHemisphere = data.hemisphere || 'borealis';
+      auroraMap = {};
+      const today = new Date().toISOString().slice(0, 10);
+      for (const d of (data.days || [])) {
+        auroraMap[d.date] = { max_kp: d.max_kp, visibility: d.visibility };
+        if (d.date === today) auroraTodayVisibility = d.visibility;
+      }
+
+      // Render the aurora bar in the weather section
+      const auroraBar = document.getElementById('aurora-bar');
+      if (auroraBar) {
+        auroraBar.style.display = showAurora ? '' : 'none';
+        if (showAurora) {
+          const name = auroraHemisphere === 'australis' ? 'Aurora Australis' : 'Aurora Borealis';
+          document.getElementById('aurora-name').textContent = name;
+
+          const v = auroraTodayVisibility;
+          const badge = document.getElementById('aurora-badge');
+          badge.className = 'aurora-badge aurora-' + v;
+          if (v === 'visible') {
+            badge.textContent = 'Visible tonight';
+            document.getElementById('aurora-icon').textContent = '🌌';
+          } else if (v === 'possible') {
+            badge.textContent = 'Possible';
+            document.getElementById('aurora-icon').textContent = '✨';
+          } else {
+            badge.textContent = 'Unlikely';
+            document.getElementById('aurora-icon').textContent = '☀';
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch aurora:', e);
     }
   }
 
@@ -128,6 +198,15 @@
 
   async function fetchWeather() {
     try {
+      // Apply visibility settings to dashboard sections
+      const weatherMain    = document.querySelector('.weather-main');
+      const detailsEl      = document.querySelector('.weather-details');
+      const forecastSection = document.querySelector('.forecast');
+
+      if (weatherMain)     weatherMain.style.display     = showTemp ? '' : 'none';
+      if (detailsEl)       detailsEl.style.display       = showDetails ? '' : 'none';
+      if (forecastSection) forecastSection.style.display  = showForecast ? '' : 'none';
+
       const [curRes, fcRes] = await Promise.all([
         fetch('/api/weather/current'),
         fetch('/api/weather/forecast'),
@@ -135,18 +214,18 @@
       const current  = await curRes.json();
       const forecast = await fcRes.json();
 
-      // Current weather
+      // Current weather (stored in metric – convert for display)
       if (current && current.temp != null) {
-        document.getElementById('current-temp').textContent = `${Math.round(current.temp)}${tempSymbol}`;
+        document.getElementById('current-temp').textContent = `${convertTemp(current.temp)}${tempSymbol()}`;
         const iconEl = document.getElementById('current-icon');
         iconEl.className = `wi weather-icon ${current.icon || 'wi-day-cloudy'}`;
-        document.getElementById('wind-speed').textContent   = `${current.wind_speed} ${windLabel} ${current.wind_dir || ''}`.trim();
+        document.getElementById('wind-speed').textContent   = `${convertWind(current.wind_speed)} ${windLabel()} ${current.wind_dir || ''}`.trim();
         document.getElementById('humidity').textContent      = `${current.humidity}%`;
         document.getElementById('sunrise').textContent       = current.sunrise || '';
         document.getElementById('sunset').textContent        = current.sunset || '';
       }
 
-      // Forecast
+      // Forecast (stored in metric – convert for display)
       if (forecast && forecast.length) {
         forecast.forEach((f, i) => {
           const el = document.getElementById(`forecast-${i}`);
@@ -154,8 +233,8 @@
           el.querySelector('.forecast-label').textContent = f.day_label || '';
           const fIcon = el.querySelector('.forecast-icon');
           fIcon.className = `wi forecast-icon ${f.icon || 'wi-na'}`;
-          el.querySelector('.hi').textContent             = `${Math.round(f.hi)}°`;
-          el.querySelector('.lo').textContent             = `${Math.round(f.lo)}°`;
+          el.querySelector('.hi').textContent             = `${convertTemp(f.hi)}°`;
+          el.querySelector('.lo').textContent             = `${convertTemp(f.lo)}°`;
         });
       }
     } catch (e) {
@@ -305,6 +384,18 @@
       }
     }
 
+    // Aurora indicator
+    if (showAurora) {
+      const aKey = dateKey(year, month, day);
+      const aurora = auroraMap[aKey];
+      if (aurora && (aurora.visibility === 'visible' || aurora.visibility === 'possible')) {
+        const aTag = document.createElement('span');
+        aTag.className = `aurora-tag aurora-${aurora.visibility}`;
+        aTag.textContent = aurora.visibility === 'visible' ? '🌌 Aurora' : '✨ Aurora?';
+        header.appendChild(aTag);
+      }
+    }
+
     cell.appendChild(header);
 
     // Events container
@@ -448,7 +539,7 @@
   // ───────── Refresh cycle ─────────
   async function refreshAll() {
     await fetchWeatherSettings();
-    await Promise.all([fetchEvents(), fetchWeather(), fetchBirthdays(), fetchReminders()]);
+    await Promise.all([fetchEvents(), fetchWeather(), fetchBirthdays(), fetchReminders(), fetchAurora()]);
     buildCalendar();
     await fetchTodayTomorrow();
   }

@@ -35,14 +35,14 @@
         <li class="nav-item active" data-section="calendars">
           <span class="nav-icon"><i class="fa-solid fa-calendar"></i></span> Calendars
         </li>
-        <li class="nav-item" data-section="weather">
-          <span class="nav-icon"><i class="fa-solid fa-cloud-sun"></i></span> Weather
+        <li class="nav-item" data-section="reminders">
+          <span class="nav-icon"><i class="fa-solid fa-bell"></i></span> Reminders
         </li>
         <li class="nav-item" data-section="birthdays">
           <span class="nav-icon"><i class="fa-solid fa-cake-candles"></i></span> Birthdays
         </li>
-        <li class="nav-item" data-section="reminders">
-          <span class="nav-icon"><i class="fa-solid fa-bell"></i></span> Reminders
+        <li class="nav-item" data-section="weather">
+          <span class="nav-icon"><i class="fa-solid fa-cloud-sun"></i></span> Weather
         </li>
         <li class="nav-item" data-section="workplaces">
           <span class="nav-icon"><i class="fa-solid fa-car"></i></span> Workplaces
@@ -214,48 +214,11 @@
         <div class="section-header">
           <div>
             <h1>Weather</h1>
-            <p class="section-desc">Configure your location for local weather and forecasts on the dashboard.</p>
+            <p class="section-desc">Configure units and choose which weather panels to show on the dashboard.</p>
           </div>
         </div>
 
         <div class="settings-card">
-          <div class="form-group">
-            <label class="form-label" for="weather-search">Search by City</label>
-            <div class="search-input-wrap">
-              <input type="text" class="form-input" id="weather-search" placeholder="Start typing a city name…" autocomplete="off">
-              <div class="search-results" id="weather-search-results">
-                <!-- Populated dynamically from geocoding API -->
-              </div>
-            </div>
-          </div>
-
-          <div class="divider-text">or enter coordinates manually</div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="weather-lat">Latitude</label>
-              <input type="text" class="form-input" id="weather-lat" placeholder="-37.8136">
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="weather-lon">Longitude</label>
-              <input type="text" class="form-input" id="weather-lon" placeholder="144.9631">
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="weather-tz">Timezone</label>
-              <input type="text" class="form-input" id="weather-tz" placeholder="Australia/Melbourne">
-              <span class="form-hint">Auto-filled when selecting a city, or enter an IANA timezone.</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Current Location</label>
-            <div class="current-value-display" id="weather-current-location">
-              <span class="current-label"><i class="fa-solid fa-location-dot"></i></span>
-              <span id="weather-display-name">—</span>
-              <span class="current-coords" id="weather-display-coords">—</span>
-            </div>
-          </div>
-
           <div class="form-group">
             <label class="form-label">Temperature Unit</label>
             <div class="radio-group">
@@ -289,6 +252,43 @@
                 <input type="radio" name="wind-unit" value="mph">
                 <span class="radio-custom"></span>
                 mph
+              </label>
+            </div>
+          </div>
+
+          <div class="divider-text">dashboard visibility</div>
+
+          <div class="form-group">
+            <label class="form-label">Show on Dashboard</label>
+            <span class="form-hint">Choose which weather panels are visible on the calendar dashboard.</span>
+            <div class="toggle-list">
+              <label class="toggle-list-item">
+                <span class="toggle-list-label"><i class="fa-solid fa-temperature-half"></i> Temperature</span>
+                <label class="toggle">
+                  <input type="checkbox" id="weather-show-temp" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </label>
+              <label class="toggle-list-item">
+                <span class="toggle-list-label"><i class="fa-solid fa-wind"></i> Details (wind, humidity, sunrise, sunset)</span>
+                <label class="toggle">
+                  <input type="checkbox" id="weather-show-details" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </label>
+              <label class="toggle-list-item">
+                <span class="toggle-list-label"><i class="fa-solid fa-calendar-week"></i> Forecast</span>
+                <label class="toggle">
+                  <input type="checkbox" id="weather-show-forecast" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </label>
+              <label class="toggle-list-item">
+                <span class="toggle-list-label"><i class="fa-solid fa-sun"></i> Aurora</span>
+                <label class="toggle">
+                  <input type="checkbox" id="weather-show-aurora" checked>
+                  <span class="toggle-slider"></span>
+                </label>
               </label>
             </div>
           </div>
@@ -556,11 +556,59 @@
         <div class="section-header">
           <div>
             <h1>Settings</h1>
-            <p class="section-desc">Backup or restore your FamilyDash data.</p>
+            <p class="section-desc">General settings, location, and data management.</p>
           </div>
         </div>
 
         <div class="settings-card">
+          <h3 class="settings-card-heading">Location</h3>
+          <p class="form-hint" style="margin-bottom:1rem;">Your location is used for weather, astronomy, and other location-based features.</p>
+
+          <div class="form-group">
+            <label class="form-label" for="weather-search">Search by City</label>
+            <div class="search-input-wrap">
+              <input type="text" class="form-input" id="weather-search" placeholder="Start typing a city name…" autocomplete="off">
+              <div class="search-results" id="weather-search-results">
+                <!-- Populated dynamically from geocoding API -->
+              </div>
+            </div>
+          </div>
+
+          <div class="divider-text">or enter coordinates manually</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="weather-lat">Latitude</label>
+              <input type="text" class="form-input" id="weather-lat" placeholder="-37.8136">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="weather-lon">Longitude</label>
+              <input type="text" class="form-input" id="weather-lon" placeholder="144.9631">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="weather-tz">Timezone</label>
+              <input type="text" class="form-input" id="weather-tz" placeholder="Australia/Melbourne">
+              <span class="form-hint">Auto-filled when selecting a city, or enter an IANA timezone.</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Current Location</label>
+            <div class="current-value-display" id="weather-current-location">
+              <span class="current-label"><i class="fa-solid fa-location-dot"></i></span>
+              <span id="weather-display-name">—</span>
+              <span class="current-coords" id="weather-display-coords">—</span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" id="btn-location-save">Save Location</button>
+            <span class="save-status" id="location-save-status"></span>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="settings-card-heading">Data</h3>
           <div class="form-group">
             <label class="form-label">Backup</label>
             <p class="form-hint">Download a full JSON backup of your calendars, events, birthdays, reminders, and settings.</p>

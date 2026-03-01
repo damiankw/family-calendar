@@ -87,6 +87,7 @@ function initialise(db) {
       month         INTEGER NOT NULL,          -- 1-12
       day           INTEGER NOT NULL,          -- 1-31
       year          INTEGER,                   -- birth year (nullable, for age calc)
+      enabled       INTEGER DEFAULT 1,
       created_at    TEXT    DEFAULT (datetime('now'))
     );
 
@@ -105,6 +106,12 @@ function initialise(db) {
       created_at    TEXT    DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS aurora_forecast (
+      date          TEXT    PRIMARY KEY,         -- YYYY-MM-DD
+      max_kp        REAL    NOT NULL DEFAULT 0,  -- highest Kp in that day's 3-hour windows
+      updated_at    TEXT    DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS users (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       username      TEXT    NOT NULL UNIQUE,
@@ -121,6 +128,16 @@ function initialise(db) {
 
   // ── Migrations for existing databases ──
   try { db.exec('ALTER TABLE calendar_sources ADD COLUMN last_synced TEXT'); } catch (_) { /* column already exists */ }
+  try { db.exec('ALTER TABLE birthdays ADD COLUMN enabled INTEGER DEFAULT 1'); } catch (_) { /* column already exists */ }
+
+  // ── Aurora forecast table (idempotent) ──
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS aurora_forecast (
+      date          TEXT    PRIMARY KEY,
+      max_kp        REAL    NOT NULL DEFAULT 0,
+      updated_at    TEXT    DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 // ───────── Password utilities ─────────
@@ -347,6 +364,11 @@ function getBirthdaysByMonth(month) {
   return db.prepare('SELECT * FROM birthdays WHERE month = ? ORDER BY day, name').all(month);
 }
 
+function getEnabledBirthdays() {
+  const db = getDb();
+  return db.prepare('SELECT * FROM birthdays WHERE enabled = 1 ORDER BY month, day, name').all();
+}
+
 function createBirthday({ name, month, day, year }) {
   const db = getDb();
   const result = db.prepare(`
@@ -355,14 +377,15 @@ function createBirthday({ name, month, day, year }) {
   return result.lastInsertRowid;
 }
 
-function updateBirthday(id, { name, month, day, year }) {
+function updateBirthday(id, { name, month, day, year, enabled }) {
   const db = getDb();
   const fields = [];
   const params = { id };
-  if (name != null)  { fields.push('name = @name');   params.name = name; }
-  if (month != null) { fields.push('month = @month'); params.month = month; }
-  if (day != null)   { fields.push('day = @day');     params.day = day; }
-  if (year !== undefined) { fields.push('year = @year'); params.year = year || null; }
+  if (name != null)     { fields.push('name = @name');       params.name = name; }
+  if (month != null)    { fields.push('month = @month');     params.month = month; }
+  if (day != null)      { fields.push('day = @day');         params.day = day; }
+  if (year !== undefined) { fields.push('year = @year');     params.year = year || null; }
+  if (enabled !== undefined) { fields.push('enabled = @enabled'); params.enabled = enabled ? 1 : 0; }
   if (!fields.length) return;
   db.prepare(`UPDATE birthdays SET ${fields.join(', ')} WHERE id = @id`).run(params);
 }
@@ -370,6 +393,29 @@ function updateBirthday(id, { name, month, day, year }) {
 function deleteBirthday(id) {
   const db = getDb();
   db.prepare('DELETE FROM birthdays WHERE id = ?').run(id);
+}
+
+// ───────── Aurora helpers ─────────
+function upsertAuroraForecast(date, maxKp) {
+  const db = getDb();
+  db.prepare(`
+    INSERT INTO aurora_forecast (date, max_kp, updated_at)
+    VALUES (?, ?, datetime('now'))
+    ON CONFLICT(date) DO UPDATE SET max_kp = excluded.max_kp, updated_at = excluded.updated_at
+  `).run(date, maxKp);
+}
+
+function getAuroraForecast() {
+  const db = getDb();
+  const today = new Date().toISOString().slice(0, 10);
+  return db.prepare('SELECT date, max_kp FROM aurora_forecast WHERE date >= ? ORDER BY date').all(today);
+}
+
+function clearOldAurora() {
+  const db = getDb();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 2);
+  db.prepare('DELETE FROM aurora_forecast WHERE date < ?').run(cutoff.toISOString().slice(0, 10));
 }
 
 // ───────── Reminder helpers ─────────
@@ -608,9 +654,13 @@ module.exports = {
   getAllBirthdays,
   getBirthday,
   getBirthdaysByMonth,
+  getEnabledBirthdays,
   createBirthday,
   updateBirthday,
   deleteBirthday,
+  upsertAuroraForecast,
+  getAuroraForecast,
+  clearOldAurora,
   getAllReminders,
   getReminder,
   getEnabledReminders,

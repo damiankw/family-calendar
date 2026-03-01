@@ -392,6 +392,51 @@ html, body {
   transform: translateX(18px);
 }
 
+/* Toggle list (settings visibility rows) */
+.toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.toggle-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.toggle-list-item:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.toggle-list-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #d8d8e0;
+}
+
+.toggle-list-label i {
+  width: 18px;
+  text-align: center;
+  color: rgba(255,255,255,0.5);
+}
+
+/* Settings card sub-headings */
+.settings-card-heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
 /* ===== Modal ===== */
 .modal-overlay {
   position: fixed;

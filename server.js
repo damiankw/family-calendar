@@ -181,6 +181,48 @@ app.get('/api/weather/forecast', (_req, res) => {
   res.json(db.getForecast());
 });
 
+// Aurora forecast: GET /api/weather/aurora
+app.get('/api/weather/aurora', (_req, res) => {
+  const lat = parseFloat(db.getSetting('weather_lat') || '0');
+  const absLat = Math.abs(lat);
+  const hemisphere = lat >= 0 ? 'borealis' : 'australis';
+
+  // Kp-to-minimum-latitude table (same as worker)
+  const KP_TO_MIN_LAT = {
+    0: 67, 1: 65, 2: 63, 3: 61, 4: 58,
+    5: 55, 6: 50, 7: 45, 8: 40, 9: 35,
+  };
+
+  function minKpForLat(absLat) {
+    for (let kp = 0; kp <= 9; kp++) {
+      if (absLat >= KP_TO_MIN_LAT[kp]) return kp;
+    }
+    return 10; // unreachable — latitude too low
+  }
+
+  function visibilityLevel(maxKp, threshold) {
+    if (maxKp >= threshold)      return 'visible';
+    if (maxKp >= threshold - 1)  return 'possible';
+    return 'unlikely';
+  }
+
+  const threshold = minKpForLat(absLat);
+  const forecast  = db.getAuroraForecast();
+
+  const days = forecast.map(row => ({
+    date:       row.date,
+    max_kp:     row.max_kp,
+    visibility: visibilityLevel(row.max_kp, threshold),
+  }));
+
+  res.json({
+    hemisphere,
+    lat: lat,
+    threshold_kp: threshold,
+    days,
+  });
+});
+
 // ───────── Settings API ─────────
 
 // ── Calendar sources CRUD ──
@@ -253,6 +295,7 @@ app.post('/api/calendars/:id/sync', requireAuth, async (req, res) => {
 
 // GET /api/settings/weather — return all weather-related settings
 app.get('/api/settings/weather', (_req, res) => {
+  const toBool = (v, def) => v == null ? def : v === '1' || v === 'true';
   res.json({
     lat:           db.getSetting('weather_lat')           || null,
     lon:           db.getSetting('weather_lon')           || null,
@@ -260,18 +303,26 @@ app.get('/api/settings/weather', (_req, res) => {
     location_name: db.getSetting('weather_location_name') || null,
     temp_unit:     db.getSetting('weather_temp_unit')     || 'celsius',
     wind_unit:     db.getSetting('weather_wind_unit')     || 'kmh',
+    show_temp:     toBool(db.getSetting('weather_show_temp'), true),
+    show_details:  toBool(db.getSetting('weather_show_details'), true),
+    show_forecast: toBool(db.getSetting('weather_show_forecast'), true),
+    show_aurora:   toBool(db.getSetting('weather_show_aurora'),   true),
   });
 });
 
 // PUT /api/settings/weather — save weather settings
 app.put('/api/settings/weather', requireAuth, (req, res) => {
-  const { lat, lon, tz, location_name, temp_unit, wind_unit } = req.body;
+  const { lat, lon, tz, location_name, temp_unit, wind_unit, show_temp, show_details, show_forecast, show_aurora } = req.body;
   if (lat != null)           db.setSetting('weather_lat',           String(lat));
   if (lon != null)           db.setSetting('weather_lon',           String(lon));
   if (tz)                    db.setSetting('weather_tz',            tz);
   if (location_name)         db.setSetting('weather_location_name', location_name);
   if (temp_unit)             db.setSetting('weather_temp_unit',     temp_unit);
   if (wind_unit)             db.setSetting('weather_wind_unit',     wind_unit);
+  if (show_temp != null)     db.setSetting('weather_show_temp',     show_temp ? '1' : '0');
+  if (show_details != null)  db.setSetting('weather_show_details',  show_details ? '1' : '0');
+  if (show_forecast != null) db.setSetting('weather_show_forecast', show_forecast ? '1' : '0');
+  if (show_aurora != null)   db.setSetting('weather_show_aurora',   show_aurora ? '1' : '0');
   res.json({ ok: true });
 });
 
@@ -280,6 +331,11 @@ app.put('/api/settings/weather', requireAuth, (req, res) => {
 // GET /api/birthdays — list all birthdays
 app.get('/api/birthdays', (_req, res) => {
   res.json(db.getAllBirthdays());
+});
+
+// GET /api/birthdays/enabled — only enabled birthdays (for dashboard)
+app.get('/api/birthdays/enabled', (_req, res) => {
+  res.json(db.getEnabledBirthdays());
 });
 
 // GET /api/birthdays/month/:month — birthdays for a specific month (1-12)
@@ -307,6 +363,15 @@ app.put('/api/birthdays/:id', requireAuth, (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (!db.getBirthday(id)) return res.status(404).json({ error: 'Birthday not found' });
   db.updateBirthday(id, req.body);
+  res.json(db.getBirthday(id));
+});
+
+// PATCH /api/birthdays/:id/toggle — toggle enabled
+app.patch('/api/birthdays/:id/toggle', requireAuth, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const b = db.getBirthday(id);
+  if (!b) return res.status(404).json({ error: 'Birthday not found' });
+  db.updateBirthday(id, { enabled: b.enabled ? 0 : 1 });
   res.json(db.getBirthday(id));
 });
 

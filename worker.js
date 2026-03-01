@@ -76,12 +76,10 @@ function formatTime(isoString) {
 async function fetchWeather() {
   console.log('[worker] Fetching weather …');
 
-  // Read location + unit preferences from settings
-  const lat      = db.getSetting('weather_lat');
-  const lon      = db.getSetting('weather_lon');
-  const tz       = db.getSetting('weather_tz');
-  const tempUnit = db.getSetting('weather_temp_unit')  || 'celsius';
-  const windUnit = db.getSetting('weather_wind_unit')  || 'kmh';
+  // Read location from settings
+  const lat = db.getSetting('weather_lat');
+  const lon = db.getSetting('weather_lon');
+  const tz  = db.getSetting('weather_tz');
 
   // Skip weather fetch if location not configured
   if (!lat || !lon || !tz) {
@@ -89,19 +87,14 @@ async function fetchWeather() {
     return;
   }
 
-  // Map our setting keys to Open-Meteo query params
-  const omTempUnit = tempUnit === 'fahrenheit' ? 'fahrenheit' : 'celsius';
-  const omWindMap  = { ms: 'ms', kmh: 'kmh', mph: 'mph' };
-  const omWindUnit = omWindMap[windUnit] || 'kmh';
-
-  // ── Current weather + daily forecast in one call ──
+  // Always fetch in metric (celsius / km/h) – conversion happens client-side
   const url = `https://api.open-meteo.com/v1/forecast`
     + `?latitude=${lat}&longitude=${lon}`
     + `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m`
     + `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset`
     + `&timezone=${encodeURIComponent(tz)}`
-    + `&temperature_unit=${omTempUnit}`
-    + `&wind_speed_unit=${omWindUnit}`
+    + `&temperature_unit=celsius`
+    + `&wind_speed_unit=kmh`
     + `&forecast_days=5`;
 
   const res = await fetch(url);
@@ -144,6 +137,65 @@ async function fetchWeather() {
   console.log(`[worker]   → current weather + ${daily.time.length}-day forecast written`);
 }
 
+// ───────── Aurora provider (NOAA SWPC — free, no API key) ─────────
+
+// Minimum geomagnetic latitude where aurora becomes visible for a given Kp
+// Source: NOAA Space Weather Scales / empirical aurora oval models
+const KP_TO_MIN_LAT = {
+  0: 67, 1: 65, 2: 63, 3: 61, 4: 58,
+  5: 55, 6: 50, 7: 45, 8: 40, 9: 35,
+};
+
+function kpVisibleAtLat(kp, absLat) {
+  // Walk through the table to find visibility.
+  // Interpolate between integer Kp values for smoother results.
+  const kpFloor = Math.floor(kp);
+  const kpCeil  = Math.min(kpFloor + 1, 9);
+  const latFloor = KP_TO_MIN_LAT[kpFloor] || 67;
+  const latCeil  = KP_TO_MIN_LAT[kpCeil]  || 67;
+  const frac = kp - kpFloor;
+  const minLat = latFloor + (latCeil - latFloor) * frac;
+  return absLat >= minLat;
+}
+
+async function fetchAurora() {
+  console.log('[worker] Fetching aurora forecast …');
+
+  const lat = db.getSetting('weather_lat');
+  if (!lat) {
+    console.log('[worker] ⚠ Location not configured — skipping aurora fetch');
+    return;
+  }
+
+  const url = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`NOAA SWPC returned ${res.status}`);
+  const raw = await res.json();
+
+  // raw is [ [header], [time_tag, kp, observed|estimated|predicted, noaa_scale], … ]
+  // Group by date and find max Kp per day
+  const dailyMax = {};
+  for (let i = 1; i < raw.length; i++) {
+    const [timeTag, kpStr] = raw[i];
+    const date = timeTag.slice(0, 10); // "YYYY-MM-DD"
+    const kp   = parseFloat(kpStr);
+    if (isNaN(kp)) continue;
+    dailyMax[date] = Math.max(dailyMax[date] || 0, kp);
+  }
+
+  // Write each day's max Kp to the database
+  let count = 0;
+  for (const [date, maxKp] of Object.entries(dailyMax)) {
+    db.upsertAuroraForecast(date, maxKp);
+    count++;
+  }
+
+  // Clean up old rows
+  db.clearOldAurora();
+
+  console.log(`[worker]   → ${count} aurora forecast days written`);
+}
+
 // ───────── Add future providers here ─────────
 // async function fetchBinNights()  { … }
 // async function fetchSchoolAlerts() { … }
@@ -159,6 +211,7 @@ async function runAll() {
 
   try { await fetchCalendarEvents(); } catch (e) { console.error('[worker] Calendar error:', e.message); }
   try { await fetchWeather();         } catch (e) { console.error('[worker] Weather error:', e.message); }
+  try { await fetchAurora();          } catch (e) { console.error('[worker] Aurora error:', e.message); }
   // try { await fetchBinNights();    } catch (e) { … }
 
   console.log(`[worker] ── Cycle complete in ${Date.now() - start}ms ──`);
