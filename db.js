@@ -315,8 +315,16 @@ function upsertForecastDay({ date, day_label, icon, hi, lo }) {
   `).run({ date, day_label, icon, hi, lo });
 }
 
-function getForecast() {
+function pruneForecastRange(startDate, endDate) {
   const db = getDb();
+  db.prepare('DELETE FROM weather_forecast WHERE date < ? OR date > ?').run(startDate, endDate);
+}
+
+function getForecast(fromDate) {
+  const db = getDb();
+  if (fromDate) {
+    return db.prepare('SELECT * FROM weather_forecast WHERE date >= ? ORDER BY date LIMIT 5').all(fromDate);
+  }
   return db.prepare('SELECT * FROM weather_forecast ORDER BY date LIMIT 5').all();
 }
 
@@ -768,6 +776,7 @@ module.exports = {
   upsertCurrentWeather,
   getCurrentWeather,
   upsertForecastDay,
+  pruneForecastRange,
   getForecast,
   getAllCalendarSources,
   getEnabledCalendarSources,

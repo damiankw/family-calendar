@@ -6,6 +6,7 @@ const statusDiv = document.getElementById('setup-status');
 const nextButtons = document.querySelectorAll('.next-step');
 const prevButtons = document.querySelectorAll('.prev-step');
 const allSteps = document.querySelectorAll('.form-step');
+const stepOne = document.getElementById('step-1');
 
 // Form step navigation
 function showStep(stepId) {
@@ -14,30 +15,46 @@ function showStep(stepId) {
   window.scrollTo(0, 0);
 }
 
+function validateStep(stepEl) {
+  const inputs = stepEl.querySelectorAll('input[required]');
+  let isValid = true;
+
+  inputs.forEach(input => {
+    if (!input.value.trim()) {
+      isValid = false;
+      input.style.borderColor = '#ff5555';
+    } else {
+      input.style.borderColor = '';
+    }
+  });
+
+  return isValid;
+}
+
+function goToNextStep(button) {
+  const currentStep = button.closest('.form-step');
+  if (!validateStep(currentStep)) return;
+  showStep(button.dataset.next);
+}
+
 nextButtons.forEach(button => {
   button.addEventListener('click', (e) => {
     e.preventDefault();
-    
-    // Validate current step
-    const currentStep = button.closest('.form-step');
-    const inputs = currentStep.querySelectorAll('input[required]');
-    let isValid = true;
-    
-    inputs.forEach(input => {
-      if (!input.value.trim()) {
-        isValid = false;
-        input.style.borderColor = '#ff5555';
-      } else {
-        input.style.borderColor = '';
-      }
-    });
-    
-    if (isValid) {
-      const nextStep = button.dataset.next;
-      showStep(nextStep);
-    }
+    goToNextStep(button);
   });
 });
+
+if (stepOne) {
+  stepOne.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+
+    const nextButton = stepOne.querySelector('.next-step');
+    if (!nextButton) return;
+
+    e.preventDefault();
+    goToNextStep(nextButton);
+  });
+}
 
 prevButtons.forEach(button => {
   button.addEventListener('click', (e) => {

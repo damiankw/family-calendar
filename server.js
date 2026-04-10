@@ -9,6 +9,21 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 
+function dateInTimeZone(timeZone) {
+  if (!timeZone) return new Date().toISOString().slice(0, 10);
+
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -199,7 +214,8 @@ app.get('/api/weather/current', (_req, res) => {
 
 // Forecast: GET /api/weather/forecast
 app.get('/api/weather/forecast', (_req, res) => {
-  res.json(db.getForecast());
+  const tz = db.getSetting('weather_tz');
+  res.json(db.getForecast(dateInTimeZone(tz)));
 });
 
 // Aurora forecast: GET /api/weather/aurora

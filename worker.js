@@ -73,6 +73,21 @@ function formatTime(isoString) {
   return `${hours}:${mins} ${ampm}`;
 }
 
+function dateInTimeZone(timeZone) {
+  if (!timeZone) return new Date().toISOString().slice(0, 10);
+
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 async function fetchWeather() {
   console.log('[worker] Fetching weather …');
 
@@ -118,7 +133,11 @@ async function fetchWeather() {
 
   // ── 5-day forecast ──
   const dayLabels = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateInTimeZone(tz);
+  const firstForecastDate = daily.time[0];
+  const lastForecastDate = daily.time[daily.time.length - 1];
+
+  db.pruneForecastRange(firstForecastDate, lastForecastDate);
 
   for (let i = 0; i < daily.time.length; i++) {
     const date = daily.time[i];
