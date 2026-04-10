@@ -55,9 +55,17 @@ html, body {
   overflow: hidden;
 }
 
+.top-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.8vw;
+}
+
 /* Clock */
 .clock-section {
-  text-align: center;
+  flex: 1 1 auto;
+  text-align: left;
   padding: 1vh 0 0.5vh;
 }
 
@@ -86,19 +94,21 @@ html, body {
 
 /* Current Weather */
 .current-weather {
-  text-align: center;
-  padding: 1.5vh 0;
+  padding: 0.8vh 0 0;
 }
 
 .weather-main {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1vw;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 0.4vh;
+  flex: 0 0 auto;
+  text-align: right;
 }
 
 .temp {
-  font-size: 4vw;
+  font-size: 3.4vw;
   font-weight: 300;
   color: #ffffff;
 }
@@ -114,7 +124,7 @@ html, body {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.8vw 1.5vw;
-  margin-top: 1.2vh;
+  margin-top: 2vh;
   font-size: 0.9vw;
   color: rgba(255, 255, 255, 0.5);
 }
@@ -620,8 +630,15 @@ html, body {
     overflow: visible;
   }
 
+  .top-summary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
   /* Clock */
   .clock-section {
+    text-align: center;
     padding: 8px 0 4px;
   }
   .time {
@@ -641,7 +658,9 @@ html, body {
     padding: 12px 0;
   }
   .weather-main {
-    gap: 12px;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
   }
   .temp {
     font-size: 42px;
@@ -653,6 +672,7 @@ html, body {
     gap: 6px 10px;
     margin-top: 8px;
     font-size: 12px;
+    justify-content: center;
   }
   .detail {
     gap: 3px;
