@@ -69,6 +69,46 @@
   // School holidays keyed by "YYYY-MM-DD" → { name, color } (first matching period)
   let schoolHolidayMap = {};
 
+  // ── Calendar navigation state ──
+  let viewYear  = new Date().getFullYear();
+  let viewMonth = new Date().getMonth(); // 0-based
+  let autoReturnTimer = null;
+  const AUTO_RETURN_MS = 5 * 60 * 1000; // 5 minutes
+
+  function isCurrentMonth() {
+    const now = new Date();
+    return viewYear === now.getFullYear() && viewMonth === now.getMonth();
+  }
+
+  function updateNavButtons() {
+    const btn = document.getElementById('cal-today');
+    if (btn) btn.style.display = isCurrentMonth() ? 'none' : '';
+  }
+
+  function scheduleAutoReturn() {
+    clearTimeout(autoReturnTimer);
+    if (!isCurrentMonth()) {
+      autoReturnTimer = setTimeout(async () => {
+        const now = new Date();
+        viewYear  = now.getFullYear();
+        viewMonth = now.getMonth();
+        await fetchEvents();
+        buildCalendar();
+        updateNavButtons();
+      }, AUTO_RETURN_MS);
+    }
+  }
+
+  async function navigateMonth(delta) {
+    viewMonth += delta;
+    if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+    if (viewMonth > 11) { viewMonth = 0;  viewYear++; }
+    scheduleAutoReturn();
+    updateNavButtons();
+    await fetchEvents();
+    buildCalendar();
+  }
+
   // Unit settings (fetched from API)
   let tempUnit   = 'celsius';   // 'celsius' | 'fahrenheit'
   let windUnit   = 'kmh';       // 'kmh' | 'mph' | 'ms'
@@ -224,18 +264,24 @@
   }
 
   async function fetchEvents() {
-    const now   = new Date();
-    const year  = now.getFullYear();
-    const month = now.getMonth() + 1; // 1-based
+    const now  = new Date();
+    const curY = now.getFullYear();
+    const curM = now.getMonth() + 1; // 1-based
+
+    eventsMap = {};
+
+    const toFetch = [{ y: curY, m: curM }];
+    if (!isCurrentMonth()) toFetch.push({ y: viewYear, m: viewMonth + 1 });
+
     try {
-      const res  = await fetch(`/api/events?year=${year}&month=${month}&includeNext=1`);
-      const rows = await res.json();
-      // Group by date
-      eventsMap = {};
-      for (const row of rows) {
-        if (!eventsMap[row.date]) eventsMap[row.date] = [];
-        eventsMap[row.date].push({ title: row.title, color: row.color, time: row.time });
-      }
+      await Promise.all(toFetch.map(async ({ y, m }) => {
+        const res  = await fetch(`/api/events?year=${y}&month=${m}&includeNext=1`);
+        const rows = await res.json();
+        for (const row of rows) {
+          if (!eventsMap[row.date]) eventsMap[row.date] = [];
+          eventsMap[row.date].push({ title: row.title, color: row.color, time: row.time });
+        }
+      }));
     } catch (e) {
       console.warn('Failed to fetch events:', e);
     }
@@ -290,6 +336,119 @@
   const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
 
   const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTH_NAMES = ['January','February','March','April','May','June',
+                       'July','August','September','October','November','December'];
+
+  // ───────── Day Detail Modal ─────────
+  let modalEl = null;
+
+  function getOrCreateModal() {
+    if (modalEl) return modalEl;
+    modalEl = document.createElement('div');
+    modalEl.className = 'day-modal-overlay';
+    modalEl.innerHTML = `
+      <div class="day-modal" role="dialog" aria-modal="true">
+        <div class="day-modal-header">
+          <div class="day-modal-date" id="day-modal-date"></div>
+          <button class="day-modal-close" id="day-modal-close" aria-label="Close">✕</button>
+        </div>
+        <div class="day-modal-body" id="day-modal-body"></div>
+      </div>
+    `;
+    document.body.appendChild(modalEl);
+    modalEl.addEventListener('click', e => { if (e.target === modalEl) closeDayModal(); });
+    document.getElementById('day-modal-close').addEventListener('click', closeDayModal);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDayModal(); });
+    return modalEl;
+  }
+
+  function closeDayModal() {
+    if (modalEl) modalEl.classList.remove('open');
+  }
+
+  async function showDayDetail(year, month, day) {
+    const overlay = getOrCreateModal();
+    const dateStr = dateKey(year, month, day);
+    const d = new Date(year, month, day);
+
+    document.getElementById('day-modal-date').textContent =
+      `${DAY_NAMES[d.getDay()]}, ${day} ${MONTH_NAMES[month]} ${year}`;
+
+    const body = document.getElementById('day-modal-body');
+    body.innerHTML = '<div class="day-modal-loading">Loading…</div>';
+    overlay.classList.add('open');
+
+    let dayEvents = [];
+    try {
+      const res = await fetch(`/api/events/${dateStr}`);
+      dayEvents = await res.json();
+    } catch (e) {
+      console.warn('Failed to fetch day events:', e);
+    }
+
+    const sh    = schoolHolidayMap[dateStr];
+    const bdays = birthdaysForDate(month + 1, day);
+    const rems  = remindersForDate(d).map(r => ({
+      time: null, color: r.color, title: r.title, _reminder: true, _icon: r.icon || 'fa-bell',
+    }));
+
+    const all = [
+      ...(sh ? [{ _schoolHoliday: true, color: sh.color, title: sh.name }] : []),
+      ...bdays,
+      ...rems,
+      ...dayEvents,
+    ];
+
+    body.innerHTML = '';
+
+    if (!all.length) {
+      const empty = document.createElement('div');
+      empty.className = 'day-modal-empty';
+      empty.textContent = 'Nothing scheduled';
+      body.appendChild(empty);
+      return;
+    }
+
+    for (const ev of all) {
+      const row = document.createElement('div');
+
+      if (ev._schoolHoliday) {
+        row.className = 'day-modal-event day-modal-sh';
+        row.style.borderColor = hexToRgba(ev.color || '#50fa7b', 0.3);
+        row.style.background  = hexToRgba(ev.color || '#50fa7b', 0.08);
+        row.innerHTML = `
+          <span class="dm-icon-col">🏫</span>
+          <div class="dm-info">
+            <span class="dm-sh-label" style="color:${ev.color || '#50fa7b'}">School Holidays</span>
+            <span class="dm-title">${ev.title}</span>
+          </div>
+        `;
+      } else if (ev._reminder) {
+        row.className = 'day-modal-event';
+        row.innerHTML = `
+          <span class="dm-time dm-dim">Reminder</span>
+          <span class="dm-icon-col"><i class="fa-solid ${ev._icon}" style="color:${ev.color || '#ff79c6'}"></i></span>
+          <span class="dm-title">${ev.title}</span>
+        `;
+      } else if (ev._birthday) {
+        row.className = 'day-modal-event';
+        row.innerHTML = `
+          <span class="dm-time dm-dim">Birthday</span>
+          <span class="dm-dot" style="background:#f1c40f"></span>
+          <span class="dm-title">${ev.title.replace('🎂 ', '')}</span>
+        `;
+      } else {
+        const displayTime = (!ev.time || ev.time === '00:00') ? 'All Day' : ev.time;
+        row.className = 'day-modal-event';
+        row.innerHTML = `
+          <span class="dm-time${displayTime === 'All Day' ? ' dm-dim' : ''}">${displayTime}</span>
+          <span class="dm-dot" style="background:${ev.color || '#8be9fd'}"></span>
+          <span class="dm-title">${ev.title}</span>
+        `;
+      }
+      body.appendChild(row);
+    }
+  }
 
   function dayLabel(offset) {
     if (offset === 0) return 'Today';
@@ -372,6 +531,7 @@
     if (!events.length) {
       const li = document.createElement('li');
       li.className = 'event';
+      li.className = 'event event-empty';
       li.innerHTML = '<span class="event-title" style="opacity:0.35">Nothing scheduled</span>';
       ul.appendChild(li);
       return;
@@ -548,20 +708,20 @@
     }
 
     cell.appendChild(eventsDiv);
+
+    cell.addEventListener('click', () => showDayDetail(year, month, day));
+
     return cell;
   }
 
   // ───────── Calendar Grid ─────────
   function buildCalendar() {
     const now   = new Date();
-    const year  = now.getFullYear();
-    const month = now.getMonth(); // 0-based
-    const today = now.getDate();
+    const year  = viewYear;
+    const month = viewMonth; // 0-based
+    const today = (year === now.getFullYear() && month === now.getMonth()) ? now.getDate() : -1;
 
-    const months = ['January','February','March','April','May','June',
-                    'July','August','September','October','November','December'];
-
-    document.getElementById('calendar-month').textContent = `${months[month]} ${year}`;
+    document.getElementById('calendar-month').textContent = `${MONTH_NAMES[month]} ${year}`;
 
     const grid = document.querySelector('.calendar-grid');
 
@@ -593,7 +753,7 @@
     const trailingCells = (7 - (totalCells % 7)) % 7;
     const nextMonth     = (month + 1) % 12;
     const nextYear      = month === 11 ? year + 1 : year;
-    const nextMonthName = months[nextMonth];
+    const nextMonthName = MONTH_NAMES[nextMonth];
     const daysInNext    = new Date(nextYear, nextMonth + 1, 0).getDate();
 
     for (let d = 1; d <= trailingCells; d++) {
@@ -642,6 +802,19 @@
   // Initial load + recurring refresh
   refreshAll();
   setInterval(refreshAll, REFRESH_MS);
+
+  // Calendar navigation
+  document.getElementById('cal-prev').addEventListener('click', () => navigateMonth(-1));
+  document.getElementById('cal-next').addEventListener('click', () => navigateMonth(1));
+  document.getElementById('cal-today').addEventListener('click', async () => {
+    clearTimeout(autoReturnTimer);
+    const now = new Date();
+    viewYear  = now.getFullYear();
+    viewMonth = now.getMonth();
+    await fetchEvents();
+    buildCalendar();
+    updateNavButtons();
+  });
 
   // Local IP — discovered via WebRTC (client-side, reflects this machine's IP, not the server's)
   (async () => {

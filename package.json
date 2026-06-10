@@ -7,12 +7,19 @@
     "worker": "node worker.js",
     "dev": "node worker.js & node server.js"
   },
-  "keywords": ["family", "calendar", "dashboard", "weather", "birthdays", "reminders"],
+  "keywords": [
+    "family",
+    "calendar",
+    "dashboard",
+    "weather",
+    "birthdays",
+    "reminders"
+  ],
   "author": "",
   "license": "ISC",
   "description": "Family Calendar - A family dashboard with calendar, weather, birthdays, and reminders",
   "dependencies": {
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.10.0",
     "express": "^5.2.1",
     "node-ical": "^0.25.4"
   }

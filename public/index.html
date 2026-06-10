@@ -28,13 +28,14 @@
             <div class="time">
               <span id="clock-time">1:28</span><span id="clock-ampm">PM</span>
             </div>
-            <div class="date" id="clock-date">Thursday, 26 February</div>
+            <div class="clock-bottom-row">
+              <div class="date" id="clock-date">Thursday, 26 February</div>
+              <div class="weather-main">
+                <span class="temp" id="current-temp">—°</span>
+                <i class="wi weather-icon" id="current-icon"></i>
+              </div>
+            </div>
           </section>
-
-          <div class="weather-main">
-            <span class="temp" id="current-temp">—°</span>
-            <i class="wi weather-icon" id="current-icon"></i>
-          </div>
         </div>
 
         <div class="weather-details">
@@ -63,11 +64,6 @@
           <span class="forecast-temps"><span class="hi">—</span> <span class="lo">—</span></span>
         </div>
         <div class="forecast-day" id="forecast-3">
-          <span class="forecast-label">—</span>
-          <i class="wi forecast-icon"></i>
-          <span class="forecast-temps"><span class="hi">—</span> <span class="lo">—</span></span>
-        </div>
-        <div class="forecast-day" id="forecast-4">
           <span class="forecast-label">—</span>
           <i class="wi forecast-icon"></i>
           <span class="forecast-temps"><span class="hi">—</span> <span class="lo">—</span></span>
@@ -101,7 +97,12 @@
     <main class="right-panel">
       <div class="calendar">
         <div class="calendar-header">
-          <span class="calendar-month" id="calendar-month">February 2026</span>
+          <button class="cal-nav-btn" id="cal-prev" aria-label="Previous month">&#8249;</button>
+          <div class="cal-header-center">
+            <span class="calendar-month" id="calendar-month">February 2026</span>
+            <button class="cal-today-btn" id="cal-today" style="display:none">Today</button>
+          </div>
+          <button class="cal-nav-btn" id="cal-next" aria-label="Next month">&#8250;</button>
         </div>
         <div class="calendar-grid">
           <!-- Day-of-week headers -->

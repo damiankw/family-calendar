@@ -27,7 +27,7 @@ html, body {
 
 .local-ip-badge span {
   font-family: 'Inter', monospace;
-  font-size: 0.6vw;
+  font-size: 0.65vw;
   color: rgba(255, 255, 255, 0.2);
   letter-spacing: 0.03em;
 }
@@ -45,11 +45,11 @@ html, body {
 
 /* ---------- LEFT PANEL ---------- */
 .left-panel {
-  flex: 0 0 33.333%;
+  flex: 0 0 27%;
   display: flex;
   flex-direction: column;
-  padding: 2.5vh 2vw;
-  gap: 2.5vh;
+  padding: 2vh 0.5vw;
+  gap: 2vh;
   background: linear-gradient(165deg, #141420 0%, #0d0d14 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
@@ -57,20 +57,25 @@ html, body {
 
 .top-summary {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.8vw;
+  flex-direction: column;
 }
 
 /* Clock */
 .clock-section {
-  flex: 1 1 auto;
-  text-align: left;
+  display: flex;
+  flex-direction: column;
   padding: 1vh 0 0.5vh;
 }
 
+.clock-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5vw;
+}
+
 .time {
-  font-size: 7vw;
+  font-size: 8vw;
   font-weight: 300;
   letter-spacing: -0.02em;
   line-height: 1;
@@ -78,7 +83,7 @@ html, body {
 }
 
 #clock-ampm {
-  font-size: 2.2vw;
+  font-size: 2.5vw;
   font-weight: 400;
   vertical-align: super;
   margin-left: 0.3vw;
@@ -86,7 +91,7 @@ html, body {
 }
 
 .date {
-  font-size: 1.4vw;
+  font-size: 1.6vw;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.55);
   margin-top: 0.5vh;
@@ -99,22 +104,20 @@ html, body {
 
 .weather-main {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: flex-start;
-  gap: 0.4vh;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4vw;
   flex: 0 0 auto;
-  text-align: right;
 }
 
 .temp {
-  font-size: 3.4vw;
+  font-size: 2vw;
   font-weight: 300;
   color: #ffffff;
 }
 
 .weather-icon {
-  font-size: 2.8vw;
+  font-size: 1.8vw;
   color: rgba(255, 255, 255, 0.85);
   line-height: 1;
 }
@@ -125,7 +128,7 @@ html, body {
   justify-content: center;
   gap: 0.8vw 1.5vw;
   margin-top: 2vh;
-  font-size: 0.9vw;
+  font-size: 1.05vw;
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -136,8 +139,8 @@ html, body {
 }
 
 .detail-icon {
-  font-size: 1vw;
-  width: 1.3vw;
+  font-size: 1.15vw;
+  width: 1.5vw;
   text-align: center;
 }
 
@@ -157,11 +160,11 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.8vw;
   padding: 1vh 0.9vw;
-  min-width: 5vw;
+  min-width: 5.5vw;
 }
 
 .forecast-label {
-  font-size: 0.75vw;
+  font-size: 0.85vw;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -169,7 +172,7 @@ html, body {
 }
 
 .forecast-icon {
-  font-size: 1.8vw;
+  font-size: 2.1vw;
   color: rgba(255, 255, 255, 0.75);
   line-height: 1;
   margin-bottom: 0.4vh;
@@ -179,7 +182,7 @@ html, body {
   display: flex;
   align-items: baseline;
   gap: 0.3vw;
-  font-size: 0.75vw;
+  font-size: 0.85vw;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -190,7 +193,7 @@ html, body {
 
 .forecast-temps .lo {
   color: #8be9fd;
-  font-size: 0.65vw;
+  font-size: 0.75vw;
   opacity: 0.7;
 }
 
@@ -209,11 +212,11 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.6vw;
   padding: 0.6vh 1vw;
-  font-size: 0.8vw;
+  font-size: 0.9vw;
 }
 
 .aurora-icon {
-  font-size: 1vw;
+  font-size: 1.1vw;
 }
 
 .aurora-name {
@@ -225,7 +228,7 @@ html, body {
   padding: 0.15vh 0.5vw;
   border-radius: 0.3vw;
   font-weight: 600;
-  font-size: 0.7vw;
+  font-size: 0.8vw;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -253,7 +256,7 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 0.15vw;
-  font-size: 0.55vw;
+  font-size: 0.63vw;
   padding: 0 0.25vw;
   border-radius: 0.2vw;
   line-height: 1.6;
@@ -290,7 +293,7 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 0.15vw;
-  font-size: 0.52vw;
+  font-size: 0.6vw;
   padding: 0 0.28vw;
   border-radius: 0.2vw;
   line-height: 1.65;
@@ -308,24 +311,24 @@ html, body {
   display: flex;
   align-items: center;
   gap: 0.6vw;
-  padding: 0.6vh 0.6vw;
+  padding: 0.6vh 0;
   border-radius: 0.5vw;
 }
 
 .event.school-holiday-event .sh-icon {
-  font-size: 1vw;
+  font-size: 1.15vw;
   line-height: 1;
 }
 
 .event.school-holiday-event .sh-label {
-  font-size: 0.85vw;
+  font-size: 0.95vw;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .event.school-holiday-event .sh-name {
-  font-size: 0.75vw;
+  font-size: 0.85vw;
   font-weight: 400;
   opacity: 0.65;
 }
@@ -350,7 +353,7 @@ html, body {
 }
 
 .events-heading {
-  font-size: 1vw;
+  font-size: 1.15vw;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -371,7 +374,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 0.6vw;
-  padding: 0.7vh 0.6vw;
+  padding: 0.7vh 0;
   border-radius: 0.5vw;
   background: rgba(255, 255, 255, 0.03);
   transition: background 0.2s;
@@ -381,16 +384,20 @@ html, body {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.event.event-empty {
+  padding-left: 0.5vw;
+}
+
 .event-time {
-  font-size: 0.8vw;
+  font-size: 0.92vw;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.45);
-  min-width: 4.5vw;
+  min-width: 5vw;
   text-align: right;
 }
 
 .event-time.all-day {
-  font-size: 0.7vw;
+  font-size: 0.8vw;
   font-style: italic;
   color: rgba(255, 255, 255, 0.3);
 }
@@ -405,7 +412,7 @@ html, body {
 }
 
 .event-title {
-  font-size: 0.95vw;
+  font-size: 1.1vw;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.85);
 }
@@ -429,16 +436,73 @@ html, body {
 }
 
 .calendar-header {
-  text-align: center;
-  padding-bottom: 1vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.8vh;
   flex-shrink: 0;
+  gap: 0.8vw;
+}
+
+.cal-header-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4vh;
 }
 
 .calendar-month {
-  font-size: 2.2vw;
+  font-size: 2.5vw;
   font-weight: 300;
   color: rgba(255, 255, 255, 0.7);
   letter-spacing: 0.04em;
+}
+
+.cal-nav-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5vw;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 2.4vw;
+  width: clamp(36px, 3.2vw, 52px);
+  height: clamp(36px, 3.2vw, 52px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+  font-family: inherit;
+}
+
+.cal-nav-btn:hover,
+.cal-nav-btn:active {
+  background: rgba(255, 255, 255, 0.13);
+  color: #fff;
+}
+
+.cal-today-btn {
+  background: rgba(224, 36, 94, 0.15);
+  border: 1px solid rgba(224, 36, 94, 0.4);
+  border-radius: 0.4vw;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.82vw;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.3vh 0.9vw;
+  min-width: 60px;
+  min-height: 26px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cal-today-btn:hover,
+.cal-today-btn:active {
+  background: rgba(224, 36, 94, 0.28);
+  color: #fff;
 }
 
 /* Calendar grid */
@@ -452,7 +516,7 @@ html, body {
 
 .dow {
   text-align: center;
-  font-size: 1.1vw;
+  font-size: 1.25vw;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.35);
   padding-bottom: 1vh;
@@ -468,7 +532,7 @@ html, body {
   background: transparent;
   border: none;
   overflow: hidden;
-  cursor: default;
+  cursor: pointer;
   transition: background 0.2s;
   min-height: 0;
 }
@@ -501,14 +565,14 @@ html, body {
 }
 
 .day-number {
-  font-size: 1vw;
+  font-size: 1.15vw;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.7);
   line-height: 1;
 }
 
 .birthday-tag {
-  font-size: 0.7vw;
+  font-size: 0.8vw;
   line-height: 1;
   color: #f1c40f;
   white-space: nowrap;
@@ -517,7 +581,7 @@ html, body {
 }
 
 .reminder-tag {
-  font-size: 0.7vw;
+  font-size: 0.8vw;
   line-height: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -531,12 +595,12 @@ html, body {
   background: #e0245e;
   color: #fff;
   font-weight: 700;
-  width: 1.6vw;
-  height: 1.6vw;
+  width: 1.85vw;
+  height: 1.85vw;
   min-width: 20px;
   min-height: 20px;
   border-radius: 50%;
-  font-size: 0.85vw;
+  font-size: 1vw;
 }
 
 .day-cell.other-month .day-number {
@@ -575,7 +639,7 @@ html, body {
 }
 
 .cal-event-text {
-  font-size: 0.6vw;
+  font-size: 0.7vw;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.7);
   overflow: hidden;
@@ -583,7 +647,7 @@ html, body {
 }
 
 .cal-event-more {
-  font-size: 0.55vw;
+  font-size: 0.63vw;
   color: rgba(255, 255, 255, 0.35);
   padding-left: 0.25vw;
   flex-shrink: 0;
@@ -592,7 +656,7 @@ html, body {
 /* Month separator row label */
 .month-label {
   grid-column: 1 / -1;
-  font-size: 1.4vw;
+  font-size: 1.6vw;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.35);
   padding: 0.4vh 0 0.2vh 0.3vw;
@@ -791,4 +855,200 @@ html, body {
 
   /* School holiday tag in calendar cell (hidden on mobile - calendar is hidden) */
   .school-holiday-tag { font-size: 9px; padding: 0 3px; }
+
+  /* Calendar nav (calendar hidden on mobile, but keep it safe) */
+  .cal-nav-btn   { width: 36px; height: 36px; font-size: 22px; border-radius: 6px; }
+  .cal-today-btn { font-size: 11px; padding: 4px 10px; border-radius: 5px; }
+}
+
+/* ═══════════════════════════════════════
+   DAY DETAIL MODAL
+   ═══════════════════════════════════════ */
+.day-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.day-modal-overlay.open {
+  display: flex;
+  animation: modal-fade 0.15s ease;
+}
+
+@keyframes modal-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.day-modal {
+  background: #16162a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.2vw;
+  width: clamp(340px, 52vw, 720px);
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
+  animation: modal-up 0.18s ease;
+}
+
+@keyframes modal-up {
+  from { transform: translateY(18px); opacity: 0.5; }
+  to   { transform: translateY(0);    opacity: 1;   }
+}
+
+.day-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.6vh 1.6vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.day-modal-date {
+  font-size: 1.9vw;
+  font-weight: 300;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.day-modal-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: clamp(36px, 2.8vw, 48px);
+  height: clamp(36px, 2.8vw, 48px);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: clamp(14px, 1vw, 18px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.day-modal-close:hover,
+.day-modal-close:active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.day-modal-body {
+  overflow-y: auto;
+  padding: 1vh 1.4vw 1.5vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.day-modal-body::-webkit-scrollbar { width: 4px; }
+.day-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.day-modal-empty,
+.day-modal-loading {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 1.1vw;
+  padding: 3vh 0;
+  text-align: center;
+}
+
+.day-modal-event {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 1.1vh 1vw;
+  border-radius: 0.65vw;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.day-modal-sh {
+  border-radius: 0.65vw;
+}
+
+.dm-time {
+  font-size: 1.05vw;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  min-width: 5.5vw;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.dm-time.dm-dim {
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.92vw;
+}
+
+.dm-dot {
+  width: 0.65vw;
+  height: 0.65vw;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dm-icon-col {
+  font-size: 1.3vw;
+  flex-shrink: 0;
+  min-width: 1.6vw;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dm-title {
+  font-size: 1.25vw;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  flex: 1;
+  line-height: 1.4;
+}
+
+.dm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2vh;
+  flex: 1;
+}
+
+.dm-sh-label {
+  font-size: 0.85vw;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+@media (max-width: 768px) {
+  .day-modal {
+    width: calc(100vw - 32px);
+    max-height: 80vh;
+    border-radius: 16px;
+  }
+  .day-modal-date   { font-size: 20px; }
+  .day-modal-empty,
+  .day-modal-loading { font-size: 14px; }
+  .day-modal-event  { gap: 12px; padding: 12px 14px; border-radius: 8px; }
+  .dm-time          { font-size: 12px; min-width: 58px; }
+  .dm-dot           { width: 9px; height: 9px; min-width: 9px; }
+  .dm-icon-col      { font-size: 18px; min-width: 22px; }
+  .dm-title         { font-size: 15px; }
+  .dm-sh-label      { font-size: 11px; }
 }
